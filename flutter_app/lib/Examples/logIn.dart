@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../ExtraFeatures/EnsureVisible.dart';
 import '../ExtraFeatures/FormHelper.dart';
 
+import 'package:validator/validator.dart';
+
 /// Note:
 ///   [*] The "formKey" is required
 ///       IF "generateListenerFunctions" = true in the "FormHelper"
@@ -290,12 +292,15 @@ class LoginFormState extends State<LoginForm> {
   //-------------------------Per Field Functions-------------------------
 
   String getEmailValidationError() {
-    //TODO: add actual email validation
-    return (focusNodeToValue[emailFocusNode].string.isNotEmpty) ? null : "Requires Valid Email";
+    return (isEmail(focusNodeToValue[emailFocusNode].string)) ? null : "Requires Valid Email";
   }
 
   String getPasswordValidationError(){
-    return (focusNodeToValue[passwordFocusNode].string.isNotEmpty) ? null : "Requires Valid Password";
+    //IF empty (i cant use .IsEmpty because it breaks if you string is null)
+    String value = focusNodeToValue[passwordFocusNode].string;
+    if(value.isNotEmpty == false) return "Requires Valid Password";
+    else if(value.length < 6) return "Requires 6 Characters Or More";
+    else return null;
   }
 
   //-------------------------Form Functions-------------------------
