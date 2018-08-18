@@ -43,29 +43,29 @@ import 'package:validator/validator.dart';
 ///       every time you call a function that requires this you can have different settings
 ///       although its suggested that they all be the same, at least when used in "TextFormFields"
 
-class Login extends StatelessWidget {
+class SignIn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: new LoginForm(),
+        body: new SignInForm(),
       ),
     );
   }
 }
 
-class LoginForm extends StatefulWidget {
-  const LoginForm({
+class SignInForm extends StatefulWidget {
+  const SignInForm({
     Key key,
   }) : super(key: key);
 
   @override
-  LoginFormState createState() {
-    return new LoginFormState();
+  SignInFormState createState() {
+    return new SignInFormState();
   }
 }
 
-class LoginFormState extends State<LoginForm> {
+class SignInFormState extends State<SignInForm> {
 
   //-------------------------Parameters-------------------------
 
