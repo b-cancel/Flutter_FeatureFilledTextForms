@@ -7,65 +7,29 @@ import '../ExtraFeatures/FormHelper.dart';
 
 import 'package:validator/validator.dart';
 
-/// Note:
-///   [*] The "formKey" is required
-///       IF "generateListenerFunctions" = true in the "FormHelper"
-///   [*] The "emptyFocusNode" is required in "formData"
-///       IF "unFocusAllWhenTappingOutside" = true in the "FormHelper"
-///   [*] The "formData" and everything it requires, is required
-///       IF you want to use anything in "FormHelper"
-///   [*] A focusNode is required for each field
-///       IF you want to use "FormHelper" or "EnsureVisibleWhenFocused"
-///   [*] A custom "getValidationError" function is required for each field
-///       IF you want error detection
-///       IF the field is Optional then simply have its Error always return null (or valid)
-///   [*] The "focusNodeToError" is required
-///       IF you want error detection
-///   [*] The "focusNodeToValue" is required
-///       TO add basic functionality that integrates with both "FormHelper" and "EnsureVisibleWhenFocused"
-///   [*] "FormHelper" should cover all the elements on screen
-///       IF you want "unFocusAllWhenTappingOutside" to work
-///   [*] The "Form" should be wrapped by a "SingleChildScrollView" somewhere above in the widget tree
-///       IF you want "EnsureVisibleWhenFocused" to work
-///   [*] Every "TextFormField" should be wrapped by a single "EnsureVisibleWhenFocused" somewhere above in the widget tree
-///       IF you want "EnsureVisibleWhenFocused" to work
-///   [*] The "TextFormField" should be wrapped by a single "AnimatedBuilder" that triggers a rebuild if focusNodeToError[theFieldsFocusNodeHere] changes
-///       IF you want Errors to be visually shown when they are detected
-///   [*] You need to run "ensureErrorVisible(context: context, focusNode: theFieldsFocusNodeHere);" before the "AnimatedBuilder" returns the "TextFormField"
-///       If you want ensure Errors are visible when they come up
-///   [*] "<TextInputFormatter> [KeyboardListener(context: context, focusNode: theFieldsFocusNodeHere)]" is required on each "TextFormField"
-///        If you want to make sure that the user can see the field they are typing in if they scroll away from it while still focused on it
-///   [*] "onSaved: (value) => saveField(focusNodeToValue[theFieldsFocusNodeHere], value)" is required on each "TextFormField"
-///        To add basic functionality that integrates with both "FormHelper" and "EnsureVisibleWhenFocused"
-///   [*] "onFieldSubmitted" must "saveField(focusNodeToValue[theFieldsFocusNodeHere], value);" before running any other code from "TextFromHelper"
-///       To add basic functionality that integrates with both "FormHelper" and "EnsureVisibleWhenFocused"
-///   [*] wherever "RefocusSettings" are required you can pass your own custom settings or the defaults
-///       every time you call a function that requires this you can have different settings
-///       although its suggested that they all be the same, at least when used in "TextFormFields"
-
-class Login extends StatelessWidget {
+class SignUp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: new LoginForm(),
+        body: new SignUpForm(),
       ),
     );
   }
 }
 
-class LoginForm extends StatefulWidget {
-  const LoginForm({
+class SignUpForm extends StatefulWidget {
+  const SignUpForm({
     Key key,
   }) : super(key: key);
 
   @override
-  LoginFormState createState() {
-    return new LoginFormState();
+  SignUpFromState createState() {
+    return new SignUpFromState();
   }
 }
 
-class LoginFormState extends State<LoginForm> {
+class SignUpFromState extends State<SignUpForm> {
 
   //-------------------------Parameters-------------------------
 
@@ -84,10 +48,12 @@ class LoginFormState extends State<LoginForm> {
 
   final FocusNode emailFocusNode = new FocusNode();
   final FocusNode passwordFocusNode = new FocusNode();
+  final FocusNode confirmPasswordFocusNode = new FocusNode();
 
   //-----extra params
 
   bool showPassword = false;
+  bool showConfirmPassword = false;
 
   //-------------------------Overrides-------------------------
 
@@ -99,10 +65,12 @@ class LoginFormState extends State<LoginForm> {
     List<FocusNode> focusNodes = new List<FocusNode>();
     focusNodes.add(emailFocusNode);
     focusNodes.add(passwordFocusNode);
+    focusNodes.add(confirmPasswordFocusNode);
 
     List<Function> errorRetrievers = new List<Function>();
     errorRetrievers.add(getEmailValidationError);
     errorRetrievers.add(getPasswordValidationError);
+    errorRetrievers.add(getConfirmPasswordValidationError);
 
     //-----Automatic Variable Init
 
@@ -143,7 +111,7 @@ class LoginFormState extends State<LoginForm> {
             mainAxisSize: MainAxisSize.max,
             children: <Widget>[
               new FlutterLogo(
-                size: 350.0,
+                size: 250.0,
               ),
               new Form(
                 key: formKey,
@@ -153,29 +121,21 @@ class LoginFormState extends State<LoginForm> {
                   children: <Widget>[
                     emailField(context),
                     passwordField(context),
+                    confirmPasswordField(context),
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: new Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: <Widget>[
                           new FlatButton(
                             padding: EdgeInsets.all(0.0),
                             onPressed: (){
                               Scaffold.of(context).showSnackBar(
-                                SnackBar(content: new Text("Navigate To Password Reset Page")),
-                              );
-                            },
-                            child: new Text("Forgot Password?"),
-                          ),
-                          new FlatButton(
-                            padding: EdgeInsets.all(0.0),
-                            onPressed: (){
-                              Scaffold.of(context).showSnackBar(
-                                SnackBar(content: new Text("Navigate To Create An Account Page")),
+                                SnackBar(content: new Text("Go To Login Page")),
                               );
                               //Navigator.of(context).pushReplacementNamed('/signUp')
                             },
-                            child: new Text("Create Account"),
+                            child: new Text("Already Have An Account?"),
                           ),
                         ],
                       ),
@@ -184,7 +144,7 @@ class LoginFormState extends State<LoginForm> {
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: <Widget>[
-                        signInButton(context),
+                        signUpButton(context),
                       ],
                     )
                   ],
@@ -223,8 +183,8 @@ class LoginFormState extends State<LoginForm> {
               onFieldSubmitted: (value) {
                 saveField(focusNodeToValue[emailFocusNode], value);
                 refocus(
-                    formData,
-                    new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(emailFocusNode)),
+                  formData,
+                  new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(emailFocusNode)),
                 );
               },
             ),
@@ -280,13 +240,59 @@ class LoginFormState extends State<LoginForm> {
     );
   }
 
-  Widget signInButton(BuildContext context) {
+  Widget confirmPasswordField(BuildContext context) {
+    return new AnimatedBuilder(
+      animation: focusNodeToError[confirmPasswordFocusNode],
+      builder: (context, child){
+        ensureErrorVisible(context, confirmPasswordFocusNode);
+        return EnsureVisible(
+          focusNode: confirmPasswordFocusNode,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            child: new TextFormField(
+              focusNode: confirmPasswordFocusNode,
+              decoration: new InputDecoration(
+                labelText: "Confirm Password",
+                errorText: focusNodeToError[confirmPasswordFocusNode].value,
+                prefixIcon: Container(
+                    padding: EdgeInsets.only(right: 16.0),
+                    child: new Icon(Icons.security)),
+                suffixIcon: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      showConfirmPassword = !showConfirmPassword;
+                    });
+                  },
+                  child: (showConfirmPassword)
+                      ? new Icon(Icons.lock_open, color: Theme.of(context).hintColor)
+                      : new Icon(Icons.lock_outline,
+                      color: Theme.of(context).hintColor),
+                ),
+              ),
+              obscureText: (showConfirmPassword) ? false : true,
+              inputFormatters: <TextInputFormatter> [KeyboardListener(context, confirmPasswordFocusNode)],
+              onSaved: (value) => saveField(focusNodeToValue[confirmPasswordFocusNode], value),
+              onFieldSubmitted: (value) {
+                saveField(focusNodeToValue[confirmPasswordFocusNode], value);
+                refocus(
+                  formData,
+                  new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(confirmPasswordFocusNode)),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget signUpButton(BuildContext context) {
     return new RaisedButton(
       onPressed: () => refocus(
         formData,
         new RefocusSettings( validationScheme: ValidationScheme.validateAllThenRefocus ),
       ),
-      child: new Text("SIGN IN"),
+      child: new Text("SIGN UP"),
     );
   }
 
@@ -304,6 +310,11 @@ class LoginFormState extends State<LoginForm> {
     else return null;
   }
 
+  String getConfirmPasswordValidationError(){
+    if(focusNodeToValue[passwordFocusNode].string == focusNodeToValue[confirmPasswordFocusNode].string) return null;
+    else return "The Passwords Don't Match";
+  }
+
   //-------------------------Form Functions-------------------------
 
   submitForm(bool fieldsValidated) async{
@@ -311,22 +322,6 @@ class LoginFormState extends State<LoginForm> {
       Scaffold.of(context).showSnackBar(
         SnackBar(content: new Text("Uncomment FireBase Integration Once Ready")),
       );
-      /*
-      try {
-        FirebaseUser user =
-            await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: focusNodeToValue[emailFocusNode].string,
-          password: focusNodeToValue[passwordFocusNode].string,
-        );
-        Scaffold.of(context).showSnackBar(
-          SnackBar(content: new Text("User ${user.uid} Is Signed In")),
-        );
-      } catch (e) {
-        Scaffold.of(context).showSnackBar(
-          SnackBar(content: new Text("Sign In Error $e")),
-        );
-      }
-      */
     }
   }
 }

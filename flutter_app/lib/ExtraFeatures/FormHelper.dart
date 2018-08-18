@@ -150,8 +150,6 @@ refocusDependingOnValidation(
 }
 
 refocus(FormData formData, RefocusSettings refocusSettings){
-  print("refocus begins");
-
   //variable setup
   FocusNode fieldToFocus;
 
@@ -159,15 +157,8 @@ refocus(FormData formData, RefocusSettings refocusSettings){
   int index = refocusSettings.firstTargetIndex;
   while(1==1){ ///Condition too complex to nicely show here, create and infinite loop, and use break instead
 
-    //process data for this index [depending on validationType]
-    String validationResult;
-    if (refocusSettings.validationType == ValidationType.check){
-      validationResult = formData.focusNodeToErrorRetrievers[formData.focusNodes[index]]();
-    }
-    else{
-      validationResult = validateField(formData, formData.focusNodes[index]);
-    }
-    bool validationPassed = (validationResult == null);
+    //process data for this indexG
+    bool validationPassed = (formData.focusNodeToErrorRetrievers[formData.focusNodes[index]]() == null);
 
     //if we have yet to find what field we want to focus on... find out if this is it...
     //if it is and we only wanted to validate until this point, stop...
@@ -175,10 +166,20 @@ refocus(FormData formData, RefocusSettings refocusSettings){
       //if (NOT SKIP IF VALID || (SKIP IF VALID && NOT VALID))
       if(refocusSettings.skipTargetIfValidates == false || validationPassed == false){
         fieldToFocus = formData.focusNodes[index];
-        if(refocusSettings.validationScheme == ValidationScheme.validateUntilRefocus)
+        if(refocusSettings.validationScheme == ValidationScheme.validateUntilRefocus){
+          if(refocusSettings.validationType == ValidationType.checkAndShow && index == refocusSettings.firstTargetIndex){
+            //COVERING EXCEPTION
+            validateField(formData, formData.focusNodes[index]);
+          }
           break; //BREAK CONDITION
+        }
       }
     }
+
+    //COVERING EXCEPTION
+    //now we actually validate the field depending on [validationType]
+    //this is done here because we don't want a field that we have not had the chance to place info into to show an error
+    if(refocusSettings.validationType == ValidationType.checkAndShow) validateField(formData, formData.focusNodes[index]);
 
     //calculate next index && BREAK CONDITIONS
     int maxIndex = formData.focusNodes.length - 1;
