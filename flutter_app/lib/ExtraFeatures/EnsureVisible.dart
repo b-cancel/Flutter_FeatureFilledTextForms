@@ -44,6 +44,7 @@ class EnsureVisible extends StatefulWidget {
   final Duration duration; //time it takes us to scroll ourselves into view
   final Curve curve; //the curve we use to scroll ourselves into view
   final Duration keyboardWait; //the time we wait to once again check if the keyboard is finally open
+  final ValueNotifier<bool> clearIsPossible; //if we pass this value notifier its implicit that we want this to be true, when the node is focused
   final Widget child;
 
   const EnsureVisible({
@@ -53,6 +54,7 @@ class EnsureVisible extends StatefulWidget {
     this.curve: Curves.ease,
     //what most humans consider instant is .1 seconds, so we want to check if the keyboard is finally open a little bit more often than that .05 seconds
     this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
+    this.clearIsPossible,
     @required this.child,
   }) : super(key: key);
 
@@ -65,20 +67,30 @@ class _EnsureVisibleWhenFocusedState extends State<EnsureVisible> with WidgetsBi
   @override
   void initState(){
     super.initState();
-    widget.focusNode.addListener(_waitForKeyboardToOpenAndEnsureVisible);
+    widget.focusNode.addListener(_listenForFocusNodeChanges);
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose(){
     WidgetsBinding.instance.removeObserver(this);
-    widget.focusNode.removeListener(_waitForKeyboardToOpenAndEnsureVisible);
+    widget.focusNode.removeListener(_listenForFocusNodeChanges);
     super.dispose();
   }
 
   @override
   void didChangeMetrics(){
     if(widget.focusNode.hasFocus) _waitForKeyboardToOpenAndEnsureVisible();
+  }
+
+  _listenForFocusNodeChanges() async{
+    //used if you want a clear field option to show up per field only when its focused
+    if(widget.clearIsPossible != null){
+      if(widget.focusNode.hasFocus) widget.clearIsPossible.value = true;
+      else widget.clearIsPossible.value = false;
+    }
+    //wait until keyboard is open
+    _waitForKeyboardToOpen();
   }
 
   Future<Null> _waitForKeyboardToOpen() async {
