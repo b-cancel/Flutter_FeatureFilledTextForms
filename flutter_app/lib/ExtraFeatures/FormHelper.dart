@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'EnsureVisible.dart';
+
 /// Note:
 /// [*] some functions are async and wait Duration.zero simply because that schedules them after something else that should happen first for everything to work properly
 /// [*] "WrappedString" is used to pass the value of the field by reference so that it can then be updated by external function "saveField"
@@ -118,6 +120,25 @@ class _TextFormHelperState extends State<FormHelper> {
   }
 }
 
+///-------------------------Form Field Helper Widget-------------------------
+
+
+Widget fieldBoilerplate(FormData formData, FocusNode focusNode, TransitionBuilder builder){
+  return EnsureVisible(
+    focusNode: focusNode,
+    clearIsPossible: formData.focusNodeToClearIsPossible[focusNode],
+    child: new AnimatedBuilder(
+      animation: formData.focusNodeToClearIsPossible[focusNode],
+      builder: (context, child){
+        return new AnimatedBuilder(
+          animation: formData.focusNodeToError[focusNode],
+          builder: builder,
+        );
+      },
+    ),
+  );
+}
+
 ///-------------------------Form Helper Functions-------------------------
 
 focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) async{
@@ -219,6 +240,7 @@ class FormData{
   final List<FocusNode> focusNodes;
   final Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   final Map<FocusNode, Function> focusNodeToErrorRetrievers;
+  final Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
 
   FormData({
     @required this.context,
@@ -227,6 +249,7 @@ class FormData{
     @required this.focusNodes,
     @required this.focusNodeToError,
     @required this.focusNodeToErrorRetrievers,
+    @required this.focusNodeToClearIsPossible,
   });
 }
 

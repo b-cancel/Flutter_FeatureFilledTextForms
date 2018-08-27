@@ -11,6 +11,7 @@ import 'package:validator/validator.dart';
 ///   [*] instead of using a "TextInputFormatter" to detect when a key is touched and then refocus
 
 /// Note:
+///   [*] The extraction of both animated builders into some easy to use wrapper class or function did not work (for reasons unknown)
 ///   [*] The "formKey" is required
 ///       IF "generateListenerFunctions" = true in the "FormHelper"
 ///   [*] The "emptyFocusNode" is required in "formData"
@@ -133,6 +134,7 @@ class SignInFormState extends State<SignInForm> {
       focusNodes: focusNodes,
       focusNodeToError: focusNodeToError,
       focusNodeToErrorRetrievers: focusNodeToErrorRetrievers,
+      focusNodeToClearIsPossible: focusNodeToClearIsPossible,
     );
 
     super.initState();
@@ -164,8 +166,22 @@ class SignInFormState extends State<SignInForm> {
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    emailField(context),
-                    passwordField(context),
+                    fieldBoilerplate(
+                      formData,
+                      emailFocusNode,
+                          (context, child){
+                        ensureErrorVisible(context, emailFocusNode);
+                        return emailField(context);
+                      },
+                    ),
+                    fieldBoilerplate(
+                      formData,
+                      passwordFocusNode,
+                          (context, child){
+                        ensureErrorVisible(context, passwordFocusNode);
+                        return passwordField(context);
+                      },
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: new Row(
@@ -213,128 +229,103 @@ class SignInFormState extends State<SignInForm> {
   //-------------------------Extracted Widgets-------------------------
 
   Widget emailField(BuildContext context) {
-    return EnsureVisible(
-      focusNode: emailFocusNode,
-      clearIsPossible: focusNodeToClearIsPossible[emailFocusNode],
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: new AnimatedBuilder(
-          animation: focusNodeToClearIsPossible[emailFocusNode],
-          builder: (context, child){
-            return new AnimatedBuilder(
-              animation: focusNodeToError[emailFocusNode],
-              builder: (context, child){
-                ensureErrorVisible(context, emailFocusNode);
-                return new TextFormField(
-                  controller: focusNodeToController[emailFocusNode],
-                  focusNode: emailFocusNode,
-                  decoration: new InputDecoration(
-                    labelText: "Email",
-                    hintText: 'you@swol.com',
-                    errorText: focusNodeToError[emailFocusNode].value,
-                    prefixIcon: Container(
-                      padding: EdgeInsets.only(right: 16.0),
-                      child: new Icon(Icons.mail),
-                    ),
-                    suffixIcon: (focusNodeToClearIsPossible[emailFocusNode].value)
-                        ? new GestureDetector(
-                      onTap: (){
-                        focusNodeToController[emailFocusNode].clear();
-                        focusNodeToValue[emailFocusNode].string = "";
-                      },
-                      child: new Icon(Icons.close),
-                    )
-                        : new Text(""),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  inputFormatters: <TextInputFormatter> [KeyboardListener(context, emailFocusNode)],
-                  onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
-                  onFieldSubmitted: (value) {
-                    saveField(focusNodeToValue[emailFocusNode], value);
-                    refocus(
-                      formData,
-                      new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(emailFocusNode)),
-                    );
-                  },
-                );
-              },
-            );
-          },
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: new TextFormField(
+        controller: focusNodeToController[emailFocusNode],
+        focusNode: emailFocusNode,
+        decoration: new InputDecoration(
+          labelText: "Email",
+          hintText: 'you@swol.com',
+          errorText: focusNodeToError[emailFocusNode].value,
+          prefixIcon: Container(
+            padding: EdgeInsets.only(right: 16.0),
+            child: new Icon(Icons.mail),
+          ),
+          suffixIcon: (focusNodeToClearIsPossible[emailFocusNode].value)
+              ? new GestureDetector(
+            onTap: (){
+              print("tapped");
+              focusNodeToController[emailFocusNode].clear();
+              focusNodeToValue[emailFocusNode].string = "";
+            },
+            child: new Icon(Icons.close),
+          )
+              : new Text(""),
         ),
+        keyboardType: TextInputType.emailAddress,
+        inputFormatters: <TextInputFormatter> [KeyboardListener(context, emailFocusNode)],
+        onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
+        onFieldSubmitted: (value) {
+          saveField(focusNodeToValue[emailFocusNode], value);
+          refocus(
+            formData,
+            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(emailFocusNode)),
+          );
+        },
       ),
     );
   }
 
   Widget passwordField(BuildContext context) {
-    return EnsureVisible(
-      focusNode: passwordFocusNode,
-      clearIsPossible: focusNodeToClearIsPossible[passwordFocusNode],
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: new AnimatedBuilder(
-          animation: focusNodeToClearIsPossible[passwordFocusNode],
-          builder: (context, child){
-            return new AnimatedBuilder(
-              animation: focusNodeToError[passwordFocusNode],
-              builder: (context, child){
-                ensureErrorVisible(context, passwordFocusNode);
-                return new TextFormField(
-                  controller: focusNodeToController[passwordFocusNode],
-                  focusNode: passwordFocusNode,
-                  decoration: new InputDecoration(
-                    labelText: "Password",
-                    errorText: focusNodeToError[passwordFocusNode].value,
-                    prefixIcon: Container(
-                      padding: EdgeInsets.only(right: 16.0),
-                      child: new Icon(Icons.security),
-                    ),
-                    suffixIcon: new Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        (focusNodeToClearIsPossible[passwordFocusNode].value)
-                            ? new GestureDetector(
-                          onTap: (){
-                            focusNodeToController[passwordFocusNode].clear();
-                            focusNodeToValue[passwordFocusNode].string = "";
-                          },
-                          child: new Icon(Icons.close),
-                        )
-                            : new Text(""),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              showPassword = !showPassword;
-                            });
-                          },
-                          child: (showPassword)
-                              ? new Icon(
-                            Icons.lock_open,
-                            color: Theme.of(context).hintColor,
-                          )
-                              : new Icon(
-                            Icons.lock_outline,
-                            color: Theme.of(context).hintColor,
-                          ),
-                        ),
-                      ],
-                    ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: new TextFormField(
+        controller: focusNodeToController[passwordFocusNode],
+        focusNode: passwordFocusNode,
+        decoration: new InputDecoration(
+          labelText: "Password",
+          errorText: focusNodeToError[passwordFocusNode].value,
+          prefixIcon: Container(
+            padding: EdgeInsets.only(right: 16.0),
+            child: new Icon(Icons.security),
+          ),
+          suffixIcon: new Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              (focusNodeToClearIsPossible[passwordFocusNode].value)
+                  ? new GestureDetector(
+                onTap: (){
+                  print("tapped");
+                  focusNodeToController[passwordFocusNode].clear();
+                  focusNodeToValue[passwordFocusNode].string = "";
+                },
+                child: new Icon(Icons.close),
+              )
+                  : new Text(""),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    showPassword = !showPassword;
+                  });
+                },
+                child: new Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: (showPassword)
+                      ? new Icon(
+                    Icons.lock_open,
+                    color: Theme.of(context).hintColor,
+                  )
+                      : new Icon(
+                    Icons.lock_outline,
+                    color: Theme.of(context).hintColor,
                   ),
-                  obscureText: (showPassword) ? false : true,
-                  inputFormatters: <TextInputFormatter> [KeyboardListener(context, passwordFocusNode)],
-                  onSaved: (value) => saveField(focusNodeToValue[passwordFocusNode], value),
-                  onFieldSubmitted: (value) {
-                    saveField(focusNodeToValue[passwordFocusNode], value);
-                    refocus(
-                      formData,
-                      new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(passwordFocusNode)),
-                    );
-                  },
-                );
-              },
-            );
-          },
+                ),
+              ),
+            ],
+          ),
         ),
+        obscureText: (showPassword) ? false : true,
+        inputFormatters: <TextInputFormatter> [KeyboardListener(context, passwordFocusNode)],
+        onSaved: (value) => saveField(focusNodeToValue[passwordFocusNode], value),
+        onFieldSubmitted: (value) {
+          saveField(focusNodeToValue[passwordFocusNode], value);
+          refocus(
+            formData,
+            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(passwordFocusNode)),
+          );
+        },
       ),
     );
   }
