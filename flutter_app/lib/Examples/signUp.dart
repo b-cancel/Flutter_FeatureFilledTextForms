@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 
-import '../ExtraFeatures/EnsureVisible.dart';
 import '../ExtraFeatures/FormHelper.dart';
+import '../ExtraFeatures/EnsureVisible.dart';
 
 import 'package:validator/validator.dart';
 
@@ -99,17 +99,21 @@ class SignUpFromState extends State<SignUpForm> {
       focusNodeToError: focusNodeToError,
       focusNodeToErrorRetrievers: focusNodeToErrorRetrievers,
       focusNodeToClearIsPossible: focusNodeToClearIsPossible,
+      focusNodeToController: focusNodeToController,
+      focusNodeToValue: focusNodeToValue,
     );
 
     super.initState();
   }
+
+  BuildContext contextGetter() => context;
 
   @override
   Widget build(BuildContext context) {
     return FormHelper(
       formKey: formKey,
       formData: formData,
-      focusNodeForInitialFocus: emailFocusNode,
+      focusNodeForInitialFocus: confirmPasswordFocusNode,
       child: new SingleChildScrollView(
         child: new Container(
           padding: EdgeInsets.all(16.0),
@@ -130,7 +134,7 @@ class SignUpFromState extends State<SignUpForm> {
                       formData,
                       emailFocusNode,
                       (context, child){
-                        ensureErrorVisible(context, emailFocusNode);
+                        ensureVisible(context, emailFocusNode);
                         return emailField(context);
                       },
                     ),
@@ -138,7 +142,7 @@ class SignUpFromState extends State<SignUpForm> {
                       formData,
                       passwordFocusNode,
                       (context, child){
-                        ensureErrorVisible(context, passwordFocusNode);
+                        ensureVisible(context, passwordFocusNode);
                         return passwordField(context);
                       },
                     ),
@@ -146,7 +150,7 @@ class SignUpFromState extends State<SignUpForm> {
                       formData,
                       confirmPasswordFocusNode,
                       (context, child){
-                        ensureErrorVisible(context, confirmPasswordFocusNode);
+                        ensureVisible(context, confirmPasswordFocusNode);
                         return confirmPassword(context);
                       },
                     ),
@@ -203,11 +207,7 @@ class SignUpFromState extends State<SignUpForm> {
           ),
           suffixIcon: (focusNodeToClearIsPossible[emailFocusNode].value)
               ? new GestureDetector(
-            onTap: (){
-              print("tapped");
-              focusNodeToController[emailFocusNode].clear();
-              focusNodeToValue[emailFocusNode].string = "";
-            },
+            onTap: () => clearField(formData, emailFocusNode),
             child: new Icon(Icons.close),
           )
               : new Text(""),
@@ -215,13 +215,7 @@ class SignUpFromState extends State<SignUpForm> {
         keyboardType: TextInputType.emailAddress,
         inputFormatters: <TextInputFormatter> [KeyboardListener(context, emailFocusNode)],
         onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
-        onFieldSubmitted: (value) {
-          saveField(focusNodeToValue[emailFocusNode], value);
-          refocus(
-            formData,
-            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(emailFocusNode)),
-          );
-        },
+        onFieldSubmitted: (value) => defaultSubmitField(formData, emailFocusNode, value, true),
       ),
     );
   }
@@ -245,11 +239,7 @@ class SignUpFromState extends State<SignUpForm> {
             children: <Widget>[
               (focusNodeToClearIsPossible[passwordFocusNode].value)
                   ? new GestureDetector(
-                onTap: (){
-                  print("tapped");
-                  focusNodeToController[passwordFocusNode].clear();
-                  focusNodeToValue[passwordFocusNode].string = "";
-                },
+                onTap: () => clearField(formData, passwordFocusNode),
                 child: new Icon(Icons.close),
               )
                   : new Text(""),
@@ -278,13 +268,7 @@ class SignUpFromState extends State<SignUpForm> {
         obscureText: (showPassword) ? false : true,
         inputFormatters: <TextInputFormatter> [KeyboardListener(context, passwordFocusNode)],
         onSaved: (value) => saveField(focusNodeToValue[passwordFocusNode], value),
-        onFieldSubmitted: (value) {
-          saveField(focusNodeToValue[passwordFocusNode], value);
-          refocus(
-            formData,
-            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(passwordFocusNode)),
-          );
-        },
+        onFieldSubmitted: (value) => defaultSubmitField(formData, passwordFocusNode, value, true),
       ),
     );
   }
@@ -307,11 +291,7 @@ class SignUpFromState extends State<SignUpForm> {
             children: <Widget>[
               (focusNodeToClearIsPossible[confirmPasswordFocusNode].value)
                   ? new GestureDetector(
-                onTap: (){
-                  print("tapped");
-                  focusNodeToController[confirmPasswordFocusNode].clear();
-                  focusNodeToValue[confirmPasswordFocusNode].string = "";
-                },
+                onTap: () => clearField(formData, confirmPasswordFocusNode),
                 child: new Icon(Icons.close),
               )
                   : new Text(""),
@@ -340,13 +320,7 @@ class SignUpFromState extends State<SignUpForm> {
         obscureText: (showConfirmPassword) ? false : true,
         inputFormatters: <TextInputFormatter> [KeyboardListener(context, confirmPasswordFocusNode)],
         onSaved: (value) => saveField(focusNodeToValue[confirmPasswordFocusNode], value),
-        onFieldSubmitted: (value) {
-          saveField(focusNodeToValue[confirmPasswordFocusNode], value);
-          refocus(
-            formData,
-            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(confirmPasswordFocusNode)),
-          );
-        },
+        onFieldSubmitted: (value) => defaultSubmitField(formData, confirmPasswordFocusNode, value, true),
       ),
     );
   }

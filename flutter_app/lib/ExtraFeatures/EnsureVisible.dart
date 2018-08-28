@@ -152,8 +152,6 @@ ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: con
   }
 }
 
-ensureErrorVisible( context, focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease,}) async => ensureVisible(context, focusNode, duration: duration, curve: curve);
-
 class KeyboardListener extends TextInputFormatter {
 
   final BuildContext context;

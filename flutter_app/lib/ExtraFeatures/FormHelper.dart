@@ -141,6 +141,17 @@ Widget fieldBoilerplate(FormData formData, FocusNode focusNode, TransitionBuilde
 
 ///-------------------------Form Helper Functions-------------------------
 
+///NOTE: this is only how most people would want to submit their field, you might want different refocus settings per submission
+defaultSubmitField(FormData formData, FocusNode focusNode, String newValue, bool refocusAfter){
+  saveField(formData.focusNodeToValue[focusNode], newValue);
+  if(refocusAfter) refocus(formData, new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(focusNode)));
+}
+
+clearField(FormData formData, FocusNode focusNode){
+  formData.focusNodeToController[focusNode].clear();
+  formData.focusNodeToValue[focusNode].string = "";
+}
+
 focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) async{
   FocusScope.of(context).requestFocus(focusNode);
   if(focusType != FocusType.focusAndLeaveKeyboard){
@@ -241,6 +252,8 @@ class FormData{
   final Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   final Map<FocusNode, Function> focusNodeToErrorRetrievers;
   final Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
+  final Map<FocusNode, TextEditingController> focusNodeToController;
+  final Map<FocusNode, WrappedString> focusNodeToValue;
 
   FormData({
     @required this.context,
@@ -250,6 +263,8 @@ class FormData{
     @required this.focusNodeToError,
     @required this.focusNodeToErrorRetrievers,
     @required this.focusNodeToClearIsPossible,
+    @required this.focusNodeToController,
+    @required this.focusNodeToValue,
   });
 }
 

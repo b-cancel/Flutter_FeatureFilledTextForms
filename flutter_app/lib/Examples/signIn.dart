@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 //import 'package:firebase_auth/firebase_auth.dart';
 
-import '../ExtraFeatures/EnsureVisible.dart';
 import '../ExtraFeatures/FormHelper.dart';
+import '../ExtraFeatures/EnsureVisible.dart';
 
 import 'package:validator/validator.dart';
 
@@ -135,13 +135,11 @@ class SignInFormState extends State<SignInForm> {
       focusNodeToError: focusNodeToError,
       focusNodeToErrorRetrievers: focusNodeToErrorRetrievers,
       focusNodeToClearIsPossible: focusNodeToClearIsPossible,
+      focusNodeToController: focusNodeToController,
+      focusNodeToValue: focusNodeToValue,
     );
 
     super.initState();
-  }
-
-  thing(){
-    print("change detected");
   }
 
   @override
@@ -169,16 +167,16 @@ class SignInFormState extends State<SignInForm> {
                     fieldBoilerplate(
                       formData,
                       emailFocusNode,
-                          (context, child){
-                        ensureErrorVisible(context, emailFocusNode);
+                      (context, child){
+                        ensureVisible(context, emailFocusNode);
                         return emailField(context);
                       },
                     ),
                     fieldBoilerplate(
                       formData,
                       passwordFocusNode,
-                          (context, child){
-                        ensureErrorVisible(context, passwordFocusNode);
+                      (context, child){
+                        ensureVisible(context, passwordFocusNode);
                         return passwordField(context);
                       },
                     ),
@@ -202,7 +200,6 @@ class SignInFormState extends State<SignInForm> {
                               Scaffold.of(context).showSnackBar(
                                 SnackBar(content: new Text("Navigate To Create An Account Page")),
                               );
-                              //Navigator.of(context).pushReplacementNamed('/signUp')
                             },
                             child: new Text("Create Account"),
                           ),
@@ -244,11 +241,7 @@ class SignInFormState extends State<SignInForm> {
           ),
           suffixIcon: (focusNodeToClearIsPossible[emailFocusNode].value)
               ? new GestureDetector(
-            onTap: (){
-              print("tapped");
-              focusNodeToController[emailFocusNode].clear();
-              focusNodeToValue[emailFocusNode].string = "";
-            },
+            onTap: () => clearField(formData, emailFocusNode),
             child: new Icon(Icons.close),
           )
               : new Text(""),
@@ -256,13 +249,7 @@ class SignInFormState extends State<SignInForm> {
         keyboardType: TextInputType.emailAddress,
         inputFormatters: <TextInputFormatter> [KeyboardListener(context, emailFocusNode)],
         onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
-        onFieldSubmitted: (value) {
-          saveField(focusNodeToValue[emailFocusNode], value);
-          refocus(
-            formData,
-            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(emailFocusNode)),
-          );
-        },
+        onFieldSubmitted: (value) => defaultSubmitField(formData, emailFocusNode, value, true),
       ),
     );
   }
@@ -286,11 +273,7 @@ class SignInFormState extends State<SignInForm> {
             children: <Widget>[
               (focusNodeToClearIsPossible[passwordFocusNode].value)
                   ? new GestureDetector(
-                onTap: (){
-                  print("tapped");
-                  focusNodeToController[passwordFocusNode].clear();
-                  focusNodeToValue[passwordFocusNode].string = "";
-                },
+                onTap: () => clearField(formData, passwordFocusNode),
                 child: new Icon(Icons.close),
               )
                   : new Text(""),
@@ -319,13 +302,7 @@ class SignInFormState extends State<SignInForm> {
         obscureText: (showPassword) ? false : true,
         inputFormatters: <TextInputFormatter> [KeyboardListener(context, passwordFocusNode)],
         onSaved: (value) => saveField(focusNodeToValue[passwordFocusNode], value),
-        onFieldSubmitted: (value) {
-          saveField(focusNodeToValue[passwordFocusNode], value);
-          refocus(
-            formData,
-            new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(passwordFocusNode)),
-          );
-        },
+        onFieldSubmitted: (value) => defaultSubmitField(formData, passwordFocusNode, value, true),
       ),
     );
   }
