@@ -39,9 +39,8 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-----form field params
 
-  Map<FocusNode, WrappedString> focusNodeToValue;
+  Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
-  Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
   Map<FocusNode, TextEditingController> focusNodeToController;
 
   //-----per field params
@@ -73,19 +72,16 @@ class SignUpFromState extends State<SignUpForm> {
 
     //-----Automatic Variable Init
 
-    focusNodeToValue = new Map<FocusNode, WrappedString>();
+    focusNodeToValue = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
-    focusNodeToClearIsPossible = new Map<FocusNode, ValueNotifier<bool>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
     Map<FocusNode, Function> focusNodeToErrorRetrievers =
     new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
-      new WrappedString(""); //this SHOULD NOT start off as null
+      new ValueNotifier<String>(""); //this SHOULD NOT start off as null
       focusNodeToError[focusNodes[nodeID]] =
       new ValueNotifier<String>(null); //this SHOULD start off as null
-      focusNodeToClearIsPossible[focusNodes[nodeID]] =
-      new ValueNotifier<bool>(false);
       focusNodeToController[focusNodes[nodeID]] = new TextEditingController();
       focusNodeToErrorRetrievers[focusNodes[nodeID]] = errorRetrievers[nodeID];
     }
@@ -99,7 +95,6 @@ class SignUpFromState extends State<SignUpForm> {
       focusNodes: focusNodes,
       focusNodeToError: focusNodeToError,
       focusNodeToErrorRetrievers: focusNodeToErrorRetrievers,
-      focusNodeToClearIsPossible: focusNodeToClearIsPossible,
       focusNodeToController: focusNodeToController,
       focusNodeToValue: focusNodeToValue,
     );
@@ -169,13 +164,12 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget emailField(BuildContext context) {
     return TextFormFieldHelper(
-      formData: formData,
       focusNode: emailFocusNode,
-      clearIsPossible: focusNodeToClearIsPossible[emailFocusNode],
+      textEditingController: focusNodeToController[emailFocusNode],
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
         child: new AnimatedBuilder(
-          animation: focusNodeToClearIsPossible[emailFocusNode],
+          animation: emailFocusNode,
           builder: (context, child) {
             return new AnimatedBuilder(
               animation: focusNodeToError[emailFocusNode],
@@ -193,7 +187,7 @@ class SignUpFromState extends State<SignUpForm> {
                       child: new Icon(Icons.mail),
                     ),
                     suffixIcon:
-                    (focusNodeToClearIsPossible[emailFocusNode].value)
+                    (emailFocusNode.hasFocus)
                         ? new GestureDetector(
                       onTap: () => clearField(formData, emailFocusNode),
                       child: new Icon(Icons.close),
@@ -214,13 +208,12 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget passwordField(BuildContext context) {
     return TextFormFieldHelper(
-      formData: formData,
       focusNode: passwordFocusNode,
-      clearIsPossible: focusNodeToClearIsPossible[passwordFocusNode],
+      textEditingController: focusNodeToController[passwordFocusNode],
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
         child: new AnimatedBuilder(
-          animation: focusNodeToClearIsPossible[passwordFocusNode],
+          animation: passwordFocusNode,
           builder: (context, child) {
             return new AnimatedBuilder(
               animation: focusNodeToError[passwordFocusNode],
@@ -240,7 +233,7 @@ class SignUpFromState extends State<SignUpForm> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        (focusNodeToClearIsPossible[passwordFocusNode].value)
+                        (passwordFocusNode.hasFocus)
                             ? new GestureDetector(
                           onTap: () => clearField(formData, passwordFocusNode),
                           child: new Icon(Icons.close),
@@ -283,13 +276,12 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget confirmPasswordField(BuildContext context) {
     return TextFormFieldHelper(
-      formData: formData,
       focusNode: confirmPasswordFocusNode,
-      clearIsPossible: focusNodeToClearIsPossible[confirmPasswordFocusNode],
+      textEditingController: focusNodeToController[confirmPasswordFocusNode],
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
         child: new AnimatedBuilder(
-          animation: focusNodeToClearIsPossible[confirmPasswordFocusNode],
+          animation: confirmPasswordFocusNode,
           builder: (context, builder) {
             return new AnimatedBuilder(
               animation: focusNodeToError[confirmPasswordFocusNode],
@@ -308,13 +300,12 @@ class SignUpFromState extends State<SignUpForm> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        (focusNodeToClearIsPossible[confirmPasswordFocusNode].value)
+                        (confirmPasswordFocusNode.hasFocus)
                             ? new GestureDetector(
                           onTap: () => clearField(formData, confirmPasswordFocusNode),
                           child: new Icon(Icons.close),
                         )
                             : new Text(""),
-
                         GestureDetector(
                           onTap: () {
                             setState(() {
