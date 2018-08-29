@@ -188,7 +188,7 @@ focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: Focu
   }
 }
 
-saveField(ValueNotifier<String> finalDest, String currentDest) => finalDest.value = currentDest;
+saveField(WrappedString finalDest, String currentDest) => finalDest.value = currentDest;
 
 String validateField(FormData formData, FocusNode focusNode){
   //null error is no error (but still must be displayed to make error go away)
@@ -268,8 +268,8 @@ refocus(FormData formData, RefocusSettings refocusSettings){
 ///-------------------------Helper Classes And Functions-------------------------
 
 class WrappedString{
-  String string;
-  WrappedString(this.string);
+  String value;
+  WrappedString(this.value);
 }
 
 class FormData{
@@ -281,7 +281,7 @@ class FormData{
   final Map<FocusNode, Function> focusNodeToErrorRetrievers;
   final Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
   final Map<FocusNode, TextEditingController> focusNodeToController;
-  final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
+  final Map<FocusNode, WrappedString> focusNodeToValue;
 
   FormData({
     @required this.context,

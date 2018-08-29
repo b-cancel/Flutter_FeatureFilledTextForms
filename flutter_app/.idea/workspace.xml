@@ -18,8 +18,8 @@
       <file leaf-file-name="signUp.dart" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="260">
-              <caret line="181" column="41" lean-forward="true" selection-start-line="181" selection-start-column="41" selection-end-line="181" selection-end-column="41" />
+            <state relative-caret-position="3099">
+              <caret line="377" column="35" lean-forward="true" selection-start-line="377" selection-start-column="35" selection-end-line="377" selection-end-column="35" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -30,8 +30,8 @@
       <file leaf-file-name="FormHelper.dart" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="141">
-              <caret line="183" column="49" lean-forward="true" selection-start-line="183" selection-start-column="49" selection-end-line="183" selection-end-column="49" />
+            <state relative-caret-position="124">
+              <caret line="431" column="36" lean-forward="true" selection-start-line="431" selection-start-column="36" selection-end-line="431" selection-end-column="36" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
               </folding>
@@ -50,13 +50,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>EnsureVisible</find>
-      <find>focusNode</find>
-      <find>keyboardli</find>
-      <find>keyboard</find>
-      <find>save</find>
-      <find>focusNodeToValue</find>
-      <find>refocusSettings</find>
       <find>durationtoau</find>
       <find>ABCDEF</find>
       <find>formData</find>
@@ -78,6 +71,15 @@
       <find>async</find>
       <find>ensurevisible</find>
       <find>ensureVisible</find>
+      <find>tovalue</find>
+      <find>formkey</find>
+      <find>getEmail</find>
+      <find>errorRetriever</find>
+      <find>errorRetrievers</find>
+      <find>rebu</find>
+      <find>focusNodeToValue</find>
+      <find>.value</find>
+      <find>validateField</find>
     </findStrings>
   </component>
   <component name="GradleLocalSettings">
@@ -94,8 +96,8 @@
         <option value="$PROJECT_DIR$/lib/Examples/signIn.dart" />
         <option value="$PROJECT_DIR$/lib/main.dart" />
         <option value="$PROJECT_DIR$/lib/ExtraFeatures/EnsureVisible.dart" />
-        <option value="$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart" />
         <option value="$PROJECT_DIR$/lib/Examples/signUp.dart" />
+        <option value="$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart" />
       </list>
     </option>
   </component>
@@ -482,6 +484,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-6">
           <caret line="26" column="31" lean-forward="false" selection-start-line="26" selection-start-column="31" selection-end-line="26" selection-end-column="31" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -529,8 +532,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="141">
-          <caret line="183" column="49" lean-forward="true" selection-start-line="183" selection-start-column="49" selection-end-line="183" selection-end-column="49" />
+        <state relative-caret-position="124">
+          <caret line="431" column="36" lean-forward="true" selection-start-line="431" selection-start-column="36" selection-end-line="431" selection-end-column="36" />
           <folding>
             <element signature="e#0#20#0" expanded="true" />
           </folding>
@@ -539,8 +542,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="260">
-          <caret line="181" column="41" lean-forward="true" selection-start-line="181" selection-start-column="41" selection-end-line="181" selection-end-column="41" />
+        <state relative-caret-position="3099">
+          <caret line="377" column="35" lean-forward="true" selection-start-line="377" selection-start-column="35" selection-end-line="377" selection-end-column="35" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>

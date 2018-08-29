@@ -39,7 +39,7 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-----form field params
 
-  Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
+  Map<FocusNode, WrappedString> focusNodeToValue;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
   Map<FocusNode, TextEditingController> focusNodeToController;
@@ -73,7 +73,7 @@ class SignUpFromState extends State<SignUpForm> {
 
     //-----Automatic Variable Init
 
-    focusNodeToValue = new Map<FocusNode, ValueNotifier<String>>();
+    focusNodeToValue = new Map<FocusNode, WrappedString>();
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToClearIsPossible = new Map<FocusNode, ValueNotifier<bool>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
@@ -81,7 +81,7 @@ class SignUpFromState extends State<SignUpForm> {
     new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
-      new ValueNotifier<String>(""); //this SHOULD NOT start off as null
+      new WrappedString(""); //this SHOULD NOT start off as null
       focusNodeToError[focusNodes[nodeID]] =
       new ValueNotifier<String>(null); //this SHOULD start off as null
       focusNodeToClearIsPossible[focusNodes[nodeID]] =
@@ -202,9 +202,12 @@ class SignUpFromState extends State<SignUpForm> {
                         : new Text(""),
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  onSaved: (value) =>
-                      saveField(focusNodeToValue[emailFocusNode], value),
-                  onFieldSubmitted: (value) => defaultSubmitField(formData, emailFocusNode, value, true),
+                  onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
+                  onFieldSubmitted: (value){
+                    print("before: " + formData.focusNodeToValue[confirmPasswordFocusNode].value);
+                    defaultSubmitField(formData, emailFocusNode, value, true);
+                    print("after: " + formData.focusNodeToValue[confirmPasswordFocusNode].value);
+                  },
                 );
               },
             );
@@ -363,7 +366,7 @@ class SignUpFromState extends State<SignUpForm> {
       onPressed: () => refocus(
         formData,
         new RefocusSettings(
-            validationScheme: ValidationScheme.validateAllThenRefocus,
+          validationScheme: ValidationScheme.validateAllThenRefocus,
         ),
       ),
       child: new Text("SIGN UP"),
@@ -373,6 +376,7 @@ class SignUpFromState extends State<SignUpForm> {
   //-------------------------Per Field Functions-------------------------
 
   String getEmailValidationError(){
+    print("'"+focusNodeToValue[passwordFocusNode].value+"'");
     if(focusNodeToValue[passwordFocusNode].value.isNotEmpty == false) return "Email Required";
     else if(isEmail(focusNodeToValue[passwordFocusNode].value) != true) return "Valid Email Required";
     else return null;
