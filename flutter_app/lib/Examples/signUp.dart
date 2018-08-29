@@ -39,7 +39,7 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-----form field params
 
-  Map<FocusNode, WrappedString> focusNodeToValue;
+  Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
   Map<FocusNode, TextEditingController> focusNodeToController;
@@ -73,7 +73,7 @@ class SignUpFromState extends State<SignUpForm> {
 
     //-----Automatic Variable Init
 
-    focusNodeToValue = new Map<FocusNode, WrappedString>();
+    focusNodeToValue = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToClearIsPossible = new Map<FocusNode, ValueNotifier<bool>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
@@ -81,7 +81,7 @@ class SignUpFromState extends State<SignUpForm> {
     new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
-      new WrappedString(""); //this SHOULD NOT start off as null
+      new ValueNotifier<String>(""); //this SHOULD NOT start off as null
       focusNodeToError[focusNodes[nodeID]] =
       new ValueNotifier<String>(null); //this SHOULD start off as null
       focusNodeToClearIsPossible[focusNodes[nodeID]] =
@@ -113,55 +113,53 @@ class SignUpFromState extends State<SignUpForm> {
       formKey: formKey,
       formData: formData,
       focusNodeForInitialFocus: emailFocusNode,
-      child: new SingleChildScrollView(
-        child: new Container(
-          padding: EdgeInsets.all(16.0),
-          child: new Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
-            children: <Widget>[
-              new FlutterLogo(
-                size: 250.0,
-              ),
-              new Form(
-                key: formKey,
-                child: new Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    emailField(context),
-                    passwordField(context),
-                    confirmPasswordField(context),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: new Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          new FlatButton(
-                            padding: EdgeInsets.all(0.0),
-                            onPressed: () {
-                              Scaffold.of(context).showSnackBar(
-                                SnackBar(
-                                    content: new Text("Go To Login Page")),
-                              );
-                            },
-                            child: new Text("Already Have An Account?"),
-                          ),
-                        ],
-                      ),
-                    ),
-                    new Row(
-                      mainAxisSize: MainAxisSize.max,
+      child: new Container(
+        padding: EdgeInsets.all(16.0),
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            new FlutterLogo(
+              size: 250.0,
+            ),
+            new Form(
+              key: formKey,
+              child: new Column(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  emailField(context),
+                  passwordField(context),
+                  confirmPasswordField(context),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: new Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: <Widget>[
-                        signUpButton(context),
+                        new FlatButton(
+                          padding: EdgeInsets.all(0.0),
+                          onPressed: () {
+                            Scaffold.of(context).showSnackBar(
+                              SnackBar(
+                                  content: new Text("Go To Login Page")),
+                            );
+                          },
+                          child: new Text("Already Have An Account?"),
+                        ),
                       ],
-                    )
-                  ],
-                ),
+                    ),
+                  ),
+                  new Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      signUpButton(context),
+                    ],
+                  )
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -182,6 +180,7 @@ class SignUpFromState extends State<SignUpForm> {
             return new AnimatedBuilder(
               animation: focusNodeToError[emailFocusNode],
               builder: (context, child) {
+                print("rebuilding because of error");
                 ensureVisible(context, emailFocusNode);
                 return new TextFormField(
                   controller: focusNodeToController[emailFocusNode],
@@ -311,12 +310,20 @@ class SignUpFromState extends State<SignUpForm> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
+                        /*
+                        new AnimatedBuilder(
+                          animation: null,
+                          builder: null,
+                        ),
+                        */
+
                         (focusNodeToClearIsPossible[confirmPasswordFocusNode].value)
                             ? new GestureDetector(
                           onTap: () => clearField(formData, confirmPasswordFocusNode),
                           child: new Icon(Icons.close),
                         )
                             : new Text(""),
+
                         GestureDetector(
                           onTap: () {
                             setState(() {
@@ -340,8 +347,7 @@ class SignUpFromState extends State<SignUpForm> {
                     ),
                   ),
                   obscureText: (showConfirmPassword) ? false : true,
-                  onSaved: (value) => saveField(
-                      focusNodeToValue[confirmPasswordFocusNode], value),
+                  onSaved: (value) => saveField(focusNodeToValue[confirmPasswordFocusNode], value),
                   onFieldSubmitted: (value) => defaultSubmitField(formData, confirmPasswordFocusNode, value, true),
                 );
               },
@@ -357,7 +363,8 @@ class SignUpFromState extends State<SignUpForm> {
       onPressed: () => refocus(
         formData,
         new RefocusSettings(
-            validationScheme: ValidationScheme.validateAllThenRefocus),
+            validationScheme: ValidationScheme.validateAllThenRefocus,
+        ),
       ),
       child: new Text("SIGN UP"),
     );
@@ -365,32 +372,36 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-------------------------Per Field Functions-------------------------
 
-  String getEmailValidationError() => (isEmail(focusNodeToValue[emailFocusNode].string)) ? null : "Requires Valid Email";
-
-  String getFirstPasswordValidationError() {
-    return getPasswordValidationError(false);
+  String getEmailValidationError(){
+    if(focusNodeToValue[passwordFocusNode].value.isNotEmpty == false) return "Email Required";
+    else if(isEmail(focusNodeToValue[passwordFocusNode].value) != true) return "Valid Email Required";
+    else return null;
   }
 
-  String getSecondPasswordValidationError() {
-    return getPasswordValidationError(true);
+  String getPasswordValidationError(bool firstPass){
+    String firstPassword = focusNodeToValue[passwordFocusNode].value;
+    String secondPassword = focusNodeToValue[confirmPasswordFocusNode].value;
+
+    //make sure this particular password is valid
+    if(firstPass){
+      if(focusNodeToValue[passwordFocusNode].value.isNotEmpty == false) return "Password Required";
+      else if(focusNodeToValue[passwordFocusNode].value.length < 6) return "The Password Requires 6 Characters Or More";
+    }
+    else{
+      if(focusNodeToValue[confirmPasswordFocusNode].value.isNotEmpty == false) return "Password Required";
+      else if(focusNodeToValue[confirmPasswordFocusNode].value.length < 6) return "The Password Requires 6 Characters Or More";
+    }
+
+    //make sure both passwords are valid together
+    if(firstPassword.isNotEmpty && secondPassword.isNotEmpty){
+      if(firstPassword != secondPassword) return "The Passwords Don't Match";
+      else return null;
+    }
+    else return null;
   }
 
-  String getPasswordValidationError(bool requireMatch) {
-    //IF empty (i cant use .IsEmpty because it breaks if you string is null)
-    String value = focusNodeToValue[passwordFocusNode].string;
-    if (value.isNotEmpty == false)
-      return "Requires Valid Password";
-    else if (value.length < 6)
-      return "Requires 6 Characters Or More";
-
-    ///NOTE: these are minimum requirements for firebase authentication
-    else if (requireMatch &&
-        focusNodeToValue[passwordFocusNode].string !=
-            focusNodeToValue[confirmPasswordFocusNode].string)
-      return "The Passwords Don't Match";
-    else
-      return null;
-  }
+  String getFirstPasswordValidationError() => getPasswordValidationError(true);
+  String getSecondPasswordValidationError() => getPasswordValidationError(false);
 
   //-------------------------Form Functions-------------------------
 

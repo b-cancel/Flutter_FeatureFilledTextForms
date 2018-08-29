@@ -4,6 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+/// New Notes:
+///   - some functions are async (and/or/xor) wait Duration.zero so that things can be scheduled properly
+///     * "initFocus" needs this so that after build from your form runs and everything in the FormHelper is setup, then you are able to do a scrolling focus on your desired node TODO...
+///     * "listenForFocusNodeChanges" TODO...
+///     * "ensureVisible" only needs to be async so that when its called INIT or ON ERROR DETECTED TODO...
+///     * "focusField" TODO...
+///   - "ensureVisible" must be called from within a "FormHelper"
+///     * this is because it has a "SingleChildScrollView"
+///     * it having this means that "RenderAbstractViewport.of(object)" will have [RenderAbstractViewport] as an ancestor
+///     * which means that ensureVisible will work
+
 /// Note:
 /// [*] some functions are async simply because that schedules them after something else that should happen first for everything to work properly
 /// [*] you really should not use "ensureVisible" or "ensureErrorVisible" or "KeyboardListener" unless that field is already wrapped in "EnsureVisibleWhenFocused"
@@ -93,10 +104,10 @@ class FormHelper extends StatefulWidget {
   });
 
   @override
-  _TextFormHelperState createState() => _TextFormHelperState();
+  _FormHelperState createState() => _FormHelperState();
 }
 
-class _TextFormHelperState extends State<FormHelper> {
+class _FormHelperState extends State<FormHelper> {
   List<Function> focusNodeListenerFunctions;
 
   @override
@@ -137,11 +148,13 @@ class _TextFormHelperState extends State<FormHelper> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if(widget.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(widget.formData.emptyFocusNode);
-      },
-      child: widget.child,
+    return SingleChildScrollView(
+      child: GestureDetector(
+        onTap: () {
+          if(widget.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(widget.formData.emptyFocusNode);
+        },
+        child: widget.child,
+      ),
     );
   }
 
@@ -151,12 +164,6 @@ class _TextFormHelperState extends State<FormHelper> {
         widget.formKey.currentState.save();
         validateField(formData, focusNode);
       }
-    };
-  }
-
-  Function generateControllerListenerFunction(BuildContext context, FocusNode focusNode, {duration: const Duration(milliseconds: 100), curve: Curves.ease}) {
-    return (){
-      ensureVisible(context, focusNode, duration: duration, curve: curve);
     };
   }
 }
@@ -170,7 +177,7 @@ defaultSubmitField(FormData formData, FocusNode focusNode, String newValue, bool
 }
 clearField(FormData formData, FocusNode focusNode){
   formData.focusNodeToController[focusNode].clear();
-  formData.focusNodeToValue[focusNode].string = "";
+  formData.focusNodeToValue[focusNode].value = "";
 }
 
 focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) async{
@@ -181,7 +188,7 @@ focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: Focu
   }
 }
 
-saveField(WrappedString finalDest, String currentDest) => finalDest.string = currentDest;
+saveField(ValueNotifier<String> finalDest, String currentDest) => finalDest.value = currentDest;
 
 String validateField(FormData formData, FocusNode focusNode){
   //null error is no error (but still must be displayed to make error go away)
@@ -274,7 +281,7 @@ class FormData{
   final Map<FocusNode, Function> focusNodeToErrorRetrievers;
   final Map<FocusNode, ValueNotifier<bool>> focusNodeToClearIsPossible;
   final Map<FocusNode, TextEditingController> focusNodeToController;
-  final Map<FocusNode, WrappedString> focusNodeToValue;
+  final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
 
   FormData({
     @required this.context,
@@ -402,7 +409,7 @@ class _EnsureVisibleWhenFocusedState extends State<TextFormFieldHelper> with Wid
   void initState(){
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    widget.focusNode.addListener(_listenForFocusNodeChanges);
+    widget.focusNode.addListener(listenForFocusNodeChanges);
     if(widget.generateControllerListenerFunctions){
       controllerListenerFunction = () => ensureVisible(context, widget.focusNode);
       widget.formData.focusNodeToController[widget.focusNode].addListener(controllerListenerFunction);
@@ -412,7 +419,7 @@ class _EnsureVisibleWhenFocusedState extends State<TextFormFieldHelper> with Wid
   @override
   void dispose(){
     WidgetsBinding.instance.removeObserver(this);
-    widget.focusNode.removeListener(_listenForFocusNodeChanges);
+    widget.focusNode.removeListener(listenForFocusNodeChanges);
     if(widget.generateControllerListenerFunctions) widget.formData.focusNodeToController[widget.focusNode].removeListener(controllerListenerFunction);
     super.dispose();
   }
@@ -422,7 +429,7 @@ class _EnsureVisibleWhenFocusedState extends State<TextFormFieldHelper> with Wid
     if(widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
   }
 
-  _listenForFocusNodeChanges() async{
+  listenForFocusNodeChanges() async{
     //used if you want a clear field option to show up per field only when its focused
     if(widget.clearIsPossible != null) widget.clearIsPossible.value = widget.focusNode.hasFocus;
     //wait until keyboard is open
