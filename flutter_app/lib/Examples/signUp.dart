@@ -180,7 +180,6 @@ class SignUpFromState extends State<SignUpForm> {
             return new AnimatedBuilder(
               animation: focusNodeToError[emailFocusNode],
               builder: (context, child) {
-                print("rebuilding because of error");
                 ensureVisible(context, emailFocusNode);
                 return new TextFormField(
                   controller: focusNodeToController[emailFocusNode],
@@ -203,11 +202,7 @@ class SignUpFromState extends State<SignUpForm> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
-                  onFieldSubmitted: (value){
-                    print("before: " + formData.focusNodeToValue[confirmPasswordFocusNode].value);
-                    defaultSubmitField(formData, emailFocusNode, value, true);
-                    print("after: " + formData.focusNodeToValue[confirmPasswordFocusNode].value);
-                  },
+                  onFieldSubmitted: (value) => defaultSubmitField(formData, emailFocusNode, value, true),
                 );
               },
             );
@@ -313,13 +308,6 @@ class SignUpFromState extends State<SignUpForm> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        /*
-                        new AnimatedBuilder(
-                          animation: null,
-                          builder: null,
-                        ),
-                        */
-
                         (focusNodeToClearIsPossible[confirmPasswordFocusNode].value)
                             ? new GestureDetector(
                           onTap: () => clearField(formData, confirmPasswordFocusNode),
@@ -376,9 +364,8 @@ class SignUpFromState extends State<SignUpForm> {
   //-------------------------Per Field Functions-------------------------
 
   String getEmailValidationError(){
-    print("'"+focusNodeToValue[passwordFocusNode].value+"'");
-    if(focusNodeToValue[passwordFocusNode].value.isNotEmpty == false) return "Email Required";
-    else if(isEmail(focusNodeToValue[passwordFocusNode].value) != true) return "Valid Email Required";
+    if(focusNodeToValue[emailFocusNode].value.isNotEmpty == false) return "Email Required";
+    else if(isEmail(focusNodeToValue[emailFocusNode].value) != true) return "Valid Email Required";
     else return null;
   }
 
