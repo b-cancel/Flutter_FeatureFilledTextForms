@@ -39,6 +39,7 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-----form field params
 
+  FieldSettings fieldSettings;
   Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   Map<FocusNode, TextEditingController> focusNodeToController;
@@ -98,6 +99,11 @@ class SignUpFromState extends State<SignUpForm> {
       focusNodeToController: focusNodeToController,
       focusNodeToValue: focusNodeToValue,
     );
+
+    //-----Set the field settings for all your fields
+    // (if you wanted different settings for each field for some strange reason, you could do this as well)
+
+    fieldSettings = new FieldSettings(); //all the default field settings work in the particular scenario
 
     super.initState();
   }
@@ -166,6 +172,7 @@ class SignUpFromState extends State<SignUpForm> {
     return TextFormFieldHelper(
       focusNode: emailFocusNode,
       textEditingController: focusNodeToController[emailFocusNode],
+      fieldSettings: fieldSettings,
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
         child: new AnimatedBuilder(
@@ -210,6 +217,7 @@ class SignUpFromState extends State<SignUpForm> {
     return TextFormFieldHelper(
       focusNode: passwordFocusNode,
       textEditingController: focusNodeToController[passwordFocusNode],
+      fieldSettings: fieldSettings,
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
         child: new AnimatedBuilder(
@@ -278,6 +286,7 @@ class SignUpFromState extends State<SignUpForm> {
     return TextFormFieldHelper(
       focusNode: confirmPasswordFocusNode,
       textEditingController: focusNodeToController[confirmPasswordFocusNode],
+      fieldSettings: fieldSettings,
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
         child: new AnimatedBuilder(

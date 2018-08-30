@@ -268,12 +268,147 @@ refocus(FormData formData, RefocusSettings refocusSettings){
   }
 }
 
-///-------------------------Helper Classes And Functions-------------------------
-
-class WrappedString{
-  String value;
-  WrappedString(this.value);
+int _getIndexAfter(int currIndex, int maxIndex){
+  currIndex++;
+  return (currIndex > maxIndex) ? 0 : currIndex;
 }
+
+int _getIndexBefore(int currIndex, int maxIndex){
+  currIndex--;
+  return (currIndex < 0) ? maxIndex : currIndex;
+}
+
+///-------------------------Text Form Field Helper Widget-------------------------
+
+class TextFormFieldHelper extends StatefulWidget {
+
+  ///NOTE: if the [WidgetsBindingObserver] is causing you performance issues you can simply remove it,
+  /// but [ensureVisibleOnReOpenKeyboard] will not function
+  /// If you want to be as performant as possible without loosing the least amount of functionality
+  /// just keep the functionality that "ensureVisibleOnKeyboardType" includes and delete the rest
+
+  ///NOTE: If [ensureVisibleOnFieldFocus], [ensureVisibleOnReOpenKeyboard], and [ensureVisibleOnKeyboardType]
+  /// are all FALSE then there is no point in wrapping your [TextFormField] in this widget
+
+  ///NOTE: If ([ensureVisibleOnReOpenKeyboard]== true) we don't need to add any code for [ensureVisibleOnFieldFocus]
+  ///else we need to listen to the focusNodes changes
+
+  ///NOTE: because of the association described above If ([ensureVisibleOnReOpenKeyboard] == true) then we don't care about the value of [ensureVisibleOnFieldFocus]
+  /// this is not because we don't want to add the feature but more because it isn't possible to create it
+
+  ///NOTE: because of how the listener on the [textEditingController] works
+  /// even if [ensureVisibleOnFieldFocus] and [ensureVisibleOnReOpenKeyboard] are both false,
+  /// you will still initially scroll to the field the first time it's focused
+
+  ///required variables
+  final Widget child;
+  final FocusNode focusNode;
+  final TextEditingController textEditingController; ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
+  final FieldSettings fieldSettings;
+
+
+  const TextFormFieldHelper({
+    @required this.child,
+    @required this.focusNode,
+    this.textEditingController, ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
+    @required this.fieldSettings,
+  });
+
+  @override
+  _TextFormFieldHelperState createState() => new _TextFormFieldHelperState();
+}
+
+class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver  {
+
+  @override
+  void initState(){
+    super.initState();
+    if(widget.fieldSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
+    else{
+      if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
+    }
+    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null){
+      widget.textEditingController.addListener(waitForKeyboardToOpenAndEnsureVisible);
+    }
+  }
+
+  @override
+  void dispose(){
+    if(widget.fieldSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
+    else{
+      if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    }
+    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null) widget.textEditingController.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics(){
+    if(widget.fieldSettings.ensureVisibleOnReOpenKeyboard && widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
+  }
+
+  Future<Null> waitForKeyboardToOpenAndEnsureVisible() async {
+    // Wait for the keyboard to come into view (if it isn't in view already)
+    if(MediaQuery.of(context).viewInsets == EdgeInsets.zero) await waitForKeyboardToOpen();
+    // ensure our focusNode is visible
+    ensureVisible(context, widget.focusNode, duration: widget.fieldSettings.scrollDuration, curve: widget.fieldSettings.scrollCurve);
+  }
+
+  Future<Null> waitForKeyboardToOpen() async {
+    if (mounted){
+      EdgeInsets closedInsets = MediaQuery.of(context).viewInsets;
+      //this works because MediaQuery.of(context).viewInsets only changes ONCE when the keyboard is FULLY open
+      while (mounted && MediaQuery.of(context).viewInsets == closedInsets) {
+        await new Future.delayed(widget.fieldSettings.keyboardWait);
+      }
+    }
+    return;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}
+
+///-------------------------Text Form Field Helper Function-------------------------
+
+ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease}) async{
+  // No need to go any further if the node has not the focus
+  if (focusNode.hasFocus){
+    final RenderObject object = context.findRenderObject();
+    assert(object != null);
+
+    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object);
+    assert(viewport != null);
+
+    ScrollableState scrollableState = Scrollable.of(context);
+    assert(scrollableState != null);
+
+    // Get its offset
+    ScrollPosition position = scrollableState.position;
+    double alignment;
+
+    if (position.pixels > viewport.getOffsetToReveal(object, 0.0)) {
+      // Move down to the top of the viewport
+      alignment = 0.0;
+    } else if (position.pixels < viewport.getOffsetToReveal(object, 1.0)){
+      // Move up to the bottom of the viewport
+      alignment = 1.0;
+    }
+
+    if(alignment != null){
+      position.ensureVisible(
+        object,
+        alignment: alignment,
+        duration: duration,
+        curve: curve,
+      );
+    }
+  }
+}
+
+///-------------------------Form Helper Classes-------------------------
 
 class FormData{
   final BuildContext context;
@@ -324,153 +459,20 @@ class RefocusSettings{
   });
 }
 
-int _getIndexAfter(int currIndex, int maxIndex){
-  currIndex++;
-  return (currIndex > maxIndex) ? 0 : currIndex;
-}
-
-int _getIndexBefore(int currIndex, int maxIndex){
-  currIndex--;
-  return (currIndex < 0) ? maxIndex : currIndex;
-}
-
-///-------------------------Ensure Visible Functions-------------------------
-
-ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease}) async{
-  // No need to go any further if the node has not the focus
-  if (focusNode.hasFocus){
-    final RenderObject object = context.findRenderObject();
-    assert(object != null);
-
-    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object);
-    assert(viewport != null);
-
-    ScrollableState scrollableState = Scrollable.of(context);
-    assert(scrollableState != null);
-
-    // Get its offset
-    ScrollPosition position = scrollableState.position;
-    double alignment;
-
-    if (position.pixels > viewport.getOffsetToReveal(object, 0.0)) {
-      // Move down to the top of the viewport
-      alignment = 0.0;
-    } else if (position.pixels < viewport.getOffsetToReveal(object, 1.0)){
-      // Move up to the bottom of the viewport
-      alignment = 1.0;
-    }
-
-    if(alignment != null){
-      position.ensureVisible(
-        object,
-        alignment: alignment,
-        duration: duration,
-        curve: curve,
-      );
-    }
-  }
-}
-
-///-------------------------Other Widget-------------------------
-
-class TextFormFieldHelper extends StatefulWidget {
-
-  ///NOTE: if the [WidgetsBindingObserver] is causing you performance issues you can simply remove it,
-  /// but [ensureVisibleOnReOpenKeyboard] will not function
-  /// If you want to be as performant as possible without loosing the least amount of functionality
-  /// just keep the functionality that "ensureVisibleOnKeyboardType" includes and delete the rest
-
-  ///NOTE: If [ensureVisibleOnFieldFocus], [ensureVisibleOnReOpenKeyboard], and [ensureVisibleOnKeyboardType]
-  /// are all FALSE then there is no point in wrapping your [TextFormField] in this widget
-
-  ///NOTE: If ([ensureVisibleOnReOpenKeyboard]== true) we don't need to add any code for [ensureVisibleOnFieldFocus]
-  ///else we need to listen to the focusNodes changes
-
-  ///NOTE: because of the association described above If ([ensureVisibleOnReOpenKeyboard] == true) then we don't care about the value of [ensureVisibleOnFieldFocus]
-  /// this is not because we don't want to add the feature but more because it isn't possible to create it
-
-  ///NOTE: because of how the listener on the [textEditingController] works
-  /// even if [ensureVisibleOnFieldFocus] and [ensureVisibleOnReOpenKeyboard] are both false,
-  /// you will still initially scroll to the field the first time it's focused
-
-  ///optimization variable
-  final Duration keyboardWait; //the time we wait to once again check if the keyboard is finally open
-  ///other variables
-  final Widget child;
-  final FocusNode focusNode;
-  final Duration scrollDuration; //time it takes us to scroll ourselves into view
-  final Curve scrollCurve; //the curve we use to scroll ourselves into view
+class FieldSettings{
+  final Duration keyboardWait;
+  final Duration scrollDuration;
+  final Curve scrollCurve;
   final bool ensureVisibleOnFieldFocus;
-  final bool ensureVisibleOnReOpenKeyboard; ///NOTE: this takes extra work which is why its separate
+  final bool ensureVisibleOnReOpenKeyboard;
   final bool ensureVisibleOnKeyboardType;
-  final TextEditingController textEditingController; ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
 
-  const TextFormFieldHelper({
-    //what most humans consider instant is .1 seconds, so we want to check if the keyboard is finally open a little bit more often than that .05 seconds
+  FieldSettings({
     this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
-    @required this.child,
-    @required this.focusNode,
     this.scrollDuration: const Duration(milliseconds: 100),
     this.scrollCurve: Curves.ease,
     this.ensureVisibleOnFieldFocus: true,
     this.ensureVisibleOnReOpenKeyboard: true,
     this.ensureVisibleOnKeyboardType: true,
-    this.textEditingController, ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
   });
-
-  @override
-  _TextFormFieldHelperState createState() => new _TextFormFieldHelperState();
-}
-
-class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver  {
-
-  @override
-  void initState(){
-    super.initState();
-    if(widget.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
-    else{
-      if(widget.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
-    }
-    if(widget.ensureVisibleOnKeyboardType && widget.textEditingController != null){
-      widget.textEditingController.addListener(waitForKeyboardToOpenAndEnsureVisible);
-    }
-  }
-
-  @override
-  void dispose(){
-    if(widget.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
-    else{
-      if(widget.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
-    }
-    if(widget.ensureVisibleOnKeyboardType && widget.textEditingController != null) widget.textEditingController.removeListener(waitForKeyboardToOpenAndEnsureVisible);
-    super.dispose();
-  }
-
-  @override
-  void didChangeMetrics(){
-    if(widget.ensureVisibleOnReOpenKeyboard && widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
-  }
-
-  Future<Null> waitForKeyboardToOpenAndEnsureVisible() async {
-    // Wait for the keyboard to come into view (if it isn't in view already)
-    if(MediaQuery.of(context).viewInsets == EdgeInsets.zero) await waitForKeyboardToOpen();
-    // ensure our focusNode is visible
-    ensureVisible(context, widget.focusNode, duration: widget.scrollDuration, curve: widget.scrollCurve);
-  }
-
-  Future<Null> waitForKeyboardToOpen() async {
-    if (mounted){
-      EdgeInsets closedInsets = MediaQuery.of(context).viewInsets;
-      //this works because MediaQuery.of(context).viewInsets only changes ONCE when the keyboard is FULLY open
-      while (mounted && MediaQuery.of(context).viewInsets == closedInsets) {
-        await new Future.delayed(widget.keyboardWait);
-      }
-    }
-    return;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.child;
-  }
 }
