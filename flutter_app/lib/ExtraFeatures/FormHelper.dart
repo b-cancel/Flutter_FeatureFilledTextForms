@@ -4,101 +4,43 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
-/// New Notes:
+/// Notes:
+///   - some features require some specific parameters
+///     * because there are so many features that you can currently switch on and off, I have not required any parameters for the sake of release and testing (by yall)
+///     * so you must manually make sure you have all the parameters that you require for the features you desire to use
+///     * I will try to specify which parameters are required under what conditions soon but if you would like to help me that would be great
 ///   - some functions are async (and/or/xor) wait Duration.zero so that things can be scheduled properly
 ///     * "initFocus" needs this so that after build from your form runs and everything in the FormHelper is setup, then you are able to do a scrolling focus on your desired node TODO...
 ///     * "listenForFocusNodeChanges" TODO...
 ///     * "ensureVisible" only needs to be async so that when its called INIT or ON ERROR DETECTED TODO...
 ///     * "focusField" TODO...
+///   - Animated Builders only rebuild if the value changes, if it was set to the exact same value it had before it is not considered a change
+///     * this simplifies the code a bit
+
 ///   - "ensureVisible" must be called from within a "FormHelper"
 ///     * this is because it has a "SingleChildScrollView"
 ///     * it having this means that "RenderAbstractViewport.of(object)" will have [RenderAbstractViewport] as an ancestor
 ///     * which means that ensureVisible will work
-///   - Animated Builders only rebuild if the value changes, if it was set to the exact same value it had before it is not considered a change
-///     * this simplifies the code a bit
-
-/// Note:
-/// [*] some functions are async simply because that schedules them after something else that should happen first for everything to work properly
-/// [*] you really should not use "ensureVisible" or "ensureErrorVisible" or "KeyboardListener" unless that field is already wrapped in "EnsureVisibleWhenFocused"
-///     you will get very unusual behavior
-///
-/// Feature Set:
-///   [1] Wrap any field with "EnsureVisibleWhenFocused" if you want that field to be automatically ensure visible on the conditions indicated
-///     1. ensure a field is visible when its toggled to focused from unfocused
-///     2. ensure a field is visible when the keyboard opens (after being dismissed manually)
-///   [2] Wrap any field that is already wrapped with "EnsureVisibleWhenFocused" with an "AnimatedBuilder"
-///     that updates when the error in "focusNodeToError" changes to have errors found during validation show up on screen
-///   [3] Before you return the main widget in the "AnimatedBuilder" run "ensureErrorVisible" to ensure the error is still in view once it pops up
-///   [4] Add a "KeyboardListener" to each field that you want to automatically scroll into focus if the keyboard is tapped
-///
-/// Other Modifications Written By: Bryan Cancel
-///   1. Removed un needed delay that is now covered by checking keyboard metrics
-///   2. Added the Code that only makes us wait for the keyboard to be in view IF it isn't already in view
-///   3. Made "ensureVisible" an external function that can be accessible by other functions so we can refocus properly on certain edge cases
-///     [+] this became relevant with the implementation of per field input validation (instead of validating the form all at once)
-///   4. Added "ensureErrorVisible" to simplify the code required to use [3] properly
-///     [*] must be async to delay execution and schedule it after the error is built
-///   5. Added "KeyboardListener" that can be added as an input formatter in the "TextFormField.inputFormatters" property so that you automatically refocus when typing
-///   6. Added "keyboardWait" or the quantity of time before we check if the keyboard is open, If it isn't open we wat that quantity again until it is open
-///     [*] this is flexible because it might take some phone keyboards longer to open up
-///   7. Function renames
-/// Modified Source Code Added By: Peter Yuen
-///   1. Makes sure that if the user closes the keyboard, we wait for it to pop up, and then we ensure the field is visible
-/// Modified Source Code Added By: boeledi
-///   [*] https://www.didierboelens.com/2018/04/hint-4-ensure-a-textfield-or-textformfield-is-visible-in-the-viewport-when-has-the-focus/
-///   1. Added code to ensure visible when the metrics change or when the keyboard opens or closes
-/// Initial Source Code Written By: Collen Jackson
-///   [*] Code Can Be Found At: https://gist.github.com/collinjackson/50172e3547e959cba77e2938f2fe5ff5
-///   1. Ensure a field is visible when its focused by scrolling to it
-
-/// Note:
-/// [*] some functions are async and wait Duration.zero simply because that schedules them after something else that should happen first for everything to work properly
-/// [*] "WrappedString" is used to pass the value of the field by reference so that it can then be updated by external function "saveField"
-/// [*] "FormData" helps in passing all the FormData that is required by these external functions
-///     only one formData should be used per form
-/// [*] "RefocusSettings" passes all the settings to functions that require refocusing
-///     multiple varied refocus settings can be used per form
-///
-/// Definitions:
-/// [*] "Scrolling Focus" Refers to the Feature that "EnsureVisibleWhenFocused" adds
-///
-/// Feature Set [Widget]:
-/// [1] Generates Listener Functions and adds one of these to each focus node,
-///   this allows each field to be saved and validated when we un focus that field
-/// [2] Use "refocusSettings" to refocus on different fields depending on the conditions passed
-/// [3] Automatically disposes of the Listeners on each Focus Node, and each Focus Node
-/// [4] Allows for Initial Scrolling Focus to one node in "focusNode"
-/// [5] UnFocuses All Nodes When Tapping anything that isn't a form field
-///   [*] also ends up validating and showing the result of the validation of the focused node because of the Focus Node Listeners on each focus node
-///
-/// Feature Set [Function]:
-/// [1] "focusField" focuses the field and also has options to deal with the keyboard
-/// [2] "saveField" saves the information currently in the text field by using a wrapper class, and it's used both "onSaved" and "onFieldSubmitted"
-/// [3] "validateField" is used to validate each field with its perspective validation function,
-///   and it displays the result of the validation on screen by using a ValueNotifier that detect changes on the error for that field
-/// TODO: Improve Both Refocus Functions and RefocusSettings (Everything seems okay now but I have a gut feeling it will require it)
-/// [4] "refocusDependingOnValidation" refocuses different depending on the validation error passed
-/// [5] "refocus" refocuses onto another field with a myriad of options
 
 ///-------------------------Form Helper Widget-------------------------
 
 enum FocusType {focusAndOpenKeyboard, focusAndCloseKeyboard, focusAndLeaveKeyboard}
 
 class FormHelper extends StatefulWidget {
-  final GlobalKey<FormState> formKey; /// REQUIRED IF: generateListenerFunctions = true
+  final GlobalKey<FormState> formKey;
   final FormData formData;
-  final RefocusSettings refocusSettings; /// REQUIRED IF: generateListenerFunctions = true
+  final RefocusSettings refocusSettings;
   final Widget child;
   final bool generateFocusNodeListenerFunctions;
   final FocusNode focusNodeForInitialFocus;
-  final FocusType focusTypeForInitialFocus; /// ONLY RELEVANT IF: focusNodeForInitialFocus != null
+  final FocusType focusTypeForInitialFocus;
   final bool unFocusAllWhenTappingOutside;
 
   FormHelper({
     this.formKey,
-    @required this.formData,
+    this.formData,
     this.refocusSettings,
-    @required this.child,
+    this.child,
     this.generateFocusNodeListenerFunctions: true,
     this.unFocusAllWhenTappingOutside: true,
     this.focusNodeForInitialFocus,
@@ -214,9 +156,9 @@ refocus(FormData formData, RefocusSettings refocusSettings){
 
   //find out what field to refocus on
   int index = refocusSettings.firstTargetIndex;
-  while(1==1){ ///Condition too complex to nicely show here, create and infinite loop, and use break instead
+  while(1==1){ ///Condition too complex to nicely show here, so I create and infinite loop, and use breaks instead
 
-    //process data for this indexG
+    //process data for this index
     bool validationPassed = (formData.focusNodeToErrorRetrievers[formData.focusNodes[index]]() == null);
 
     //if we have yet to find what field we want to focus on... find out if this is it...
@@ -275,71 +217,39 @@ int _getIndexBefore(int currIndex, int maxIndex){
 }
 
 ///-------------------------Text Form Field Helper Widget-------------------------
-///
-/*
-TextFormFieldHelper(
-      focusNode: emailFocusNode,
-      textEditingController: focusNodeToController[emailFocusNode],
-      fieldSettings: fieldSettings,
-      textInField: focusNodeToTextInField[emailFocusNode],
-      child: new AnimatedBuilder(
-        animation: focusNodeToTextInField[emailFocusNode],
-        builder: (context, child) {
-          return new AnimatedBuilder(
-            animation: focusNodeToError[emailFocusNode],
-            builder: (context, child) {
-              return new AnimatedBuilder(
-                animation: emailFocusNode,
-                builder: (context, child) {
-                  ensureVisible(context, emailFocusNode);
-                  return THINGY
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
- */
 
 class TextFormFieldHelper extends StatefulWidget {
 
-  ///NOTE: if the [WidgetsBindingObserver] is causing you performance issues you can simply remove it,
-  /// but [ensureVisibleOnReOpenKeyboard] will not function
-  /// If you want to be as performant as possible without loosing the least amount of functionality
-  /// just keep the functionality that "ensureVisibleOnKeyboardType" includes and delete the rest
-
-  ///NOTE: If [ensureVisibleOnFieldFocus], [ensureVisibleOnReOpenKeyboard], and [ensureVisibleOnKeyboardType]
-  /// are all FALSE then there is no point in wrapping your [TextFormField] in this widget
-
-  ///NOTE: If ([ensureVisibleOnReOpenKeyboard]== true) we don't need to add any code for [ensureVisibleOnFieldFocus]
-  ///else we need to listen to the focusNodes changes
-
-  ///NOTE: because of the association described above If ([ensureVisibleOnReOpenKeyboard] == true) then we don't care about the value of [ensureVisibleOnFieldFocus]
-  /// this is not because we don't want to add the feature but more because it isn't possible to create it
-
-  ///NOTE: because of how the listener on the [textEditingController] works
-  /// even if [ensureVisibleOnFieldFocus] and [ensureVisibleOnReOpenKeyboard] are both false,
-  /// you will still initially scroll to the field the first time it's focused
-
-  /*
-  final TextEditingController textEditingController; ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
-  ///ONLY NEEDED if you want to detect when there is text in field so that you can make the clear field option visible
-  /// ALSO REQUIRES textEditingController
-  final ValueNotifier<bool> textInField;
-   */
-
-  ///required variables
   final FocusNode focusNode;
   final FormData formData;
-  final FieldSettings fieldSettings;
   final TransitionBuilder builder;
 
+  final Duration keyboardWait;
+  final Duration scrollDuration;
+  final Curve scrollCurve;
+  final bool ensureVisibleOnFieldFocus;
+  final bool ensureVisibleOnReOpenKeyboard;
+  final bool ensureVisibleOnKeyboardType;
+
+  //final bool rebuildWidgetOnFieldContentChangeBetweenNoContentAndSomeContent; //TODO make sure this is only used for displaying our clear field button
+  //final bool rebuildWidgetOnFieldFocusNodeChange; //TODO check if this is only used for displyaing our clear field button
+  //final bool rebuildWidgetOnFieldErrorChange;
+
   const TextFormFieldHelper({
-    @required this.focusNode,
-    @required this.formData,
-    @required this.fieldSettings,
-    @required this.builder,
+    this.focusNode,
+    this.formData,
+    this.builder,
+
+    this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
+    this.scrollDuration: const Duration(milliseconds: 100),
+    this.scrollCurve: Curves.ease,
+    this.ensureVisibleOnFieldFocus: true,
+    this.ensureVisibleOnReOpenKeyboard: true,
+    this.ensureVisibleOnKeyboardType: true,
+
+    //this.rebuildWidgetOnFieldContentChangeBetweenNoContentAndSomeContent: true,
+    //this.rebuildWidgetOnFieldFocusNodeChange: true,
+    //this.rebuildWidgetOnFieldErrorChange: true,
   });
 
   @override
@@ -353,11 +263,11 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
   @override
   void initState(){
     super.initState();
-    if(widget.fieldSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
+    if(widget.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
     else{
-      if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
+      if(widget.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
+    if(widget.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
       widget.formData.focusNodeToController[widget.focusNode].addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
     if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
@@ -371,11 +281,11 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   void dispose(){
-    if(widget.fieldSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
+    if(widget.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
     else{
-      if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+      if(widget.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
+    if(widget.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
       widget.formData.focusNodeToController[widget.focusNode].removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
     if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
@@ -386,14 +296,14 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   void didChangeMetrics(){
-    if(widget.fieldSettings.ensureVisibleOnReOpenKeyboard && widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
+    if(widget.ensureVisibleOnReOpenKeyboard && widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
   }
 
   Future<Null> waitForKeyboardToOpenAndEnsureVisible() async {
     // Wait for the keyboard to come into view (if it isn't in view already)
     if(MediaQuery.of(context).viewInsets == EdgeInsets.zero) await waitForKeyboardToOpen();
     // ensure our focusNode is visible
-    ensureVisible(context, widget.focusNode, duration: widget.fieldSettings.scrollDuration, curve: widget.fieldSettings.scrollCurve);
+    ensureVisible(context, widget.focusNode, duration: widget.scrollDuration, curve: widget.scrollCurve);
   }
 
   Future<Null> waitForKeyboardToOpen() async {
@@ -401,7 +311,7 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
       EdgeInsets closedInsets = MediaQuery.of(context).viewInsets;
       //this works because MediaQuery.of(context).viewInsets only changes ONCE when the keyboard is FULLY open
       while (mounted && MediaQuery.of(context).viewInsets == closedInsets) {
-        await new Future.delayed(widget.fieldSettings.keyboardWait);
+        await new Future.delayed(widget.keyboardWait);
       }
     }
     return;
@@ -415,6 +325,7 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
         return new AnimatedBuilder(
           animation: widget.formData.focusNodeToError[widget.focusNode],
           builder: (context, child) {
+            ensureVisible(context, widget.focusNode);
             return new AnimatedBuilder(
               animation: widget.focusNode,
               builder: widget.builder,
@@ -424,41 +335,39 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
       },
     );
   }
-}
 
-///-------------------------Text Form Field Helper Function-------------------------
+  ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease}) async{
+    // No need to go any further if the node has not the focus
+    if (focusNode.hasFocus){
+      final RenderObject object = context.findRenderObject();
+      assert(object != null);
 
-ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease}) async{
-  // No need to go any further if the node has not the focus
-  if (focusNode.hasFocus){
-    final RenderObject object = context.findRenderObject();
-    assert(object != null);
+      final RenderAbstractViewport viewport = RenderAbstractViewport.of(object);
+      assert(viewport != null);
 
-    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object);
-    assert(viewport != null);
+      ScrollableState scrollableState = Scrollable.of(context);
+      assert(scrollableState != null);
 
-    ScrollableState scrollableState = Scrollable.of(context);
-    assert(scrollableState != null);
+      // Get its offset
+      ScrollPosition position = scrollableState.position;
+      double alignment;
 
-    // Get its offset
-    ScrollPosition position = scrollableState.position;
-    double alignment;
+      if (position.pixels > viewport.getOffsetToReveal(object, 0.0)) {
+        // Move down to the top of the viewport
+        alignment = 0.0;
+      } else if (position.pixels < viewport.getOffsetToReveal(object, 1.0)){
+        // Move up to the bottom of the viewport
+        alignment = 1.0;
+      }
 
-    if (position.pixels > viewport.getOffsetToReveal(object, 0.0)) {
-      // Move down to the top of the viewport
-      alignment = 0.0;
-    } else if (position.pixels < viewport.getOffsetToReveal(object, 1.0)){
-      // Move up to the bottom of the viewport
-      alignment = 1.0;
-    }
-
-    if(alignment != null){
-      position.ensureVisible(
-        object,
-        alignment: alignment,
-        duration: duration,
-        curve: curve,
-      );
+      if(alignment != null){
+        position.ensureVisible(
+          object,
+          alignment: alignment,
+          duration: duration,
+          curve: curve,
+        );
+      }
     }
   }
 }
@@ -477,15 +386,15 @@ class FormData{
   final Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
 
   FormData({
-    @required this.context,
-    this.emptyFocusNode, ///REQUIRED IF: unFocusAllWhenTappingOutside = true
-    @required this.submitForm,
-    @required this.focusNodes,
-    @required this.focusNodeToError,
-    @required this.focusNodeToErrorRetrievers,
-    @required this.focusNodeToController,
-    @required this.focusNodeToValue,
-    @required this.focusNodeToTextInField,
+    this.context,
+    this.emptyFocusNode,
+    this.submitForm,
+    this.focusNodes,
+    this.focusNodeToError,
+    this.focusNodeToErrorRetrievers,
+    this.focusNodeToController,
+    this.focusNodeToValue,
+    this.focusNodeToTextInField,
   });
 }
 
@@ -512,23 +421,5 @@ class RefocusSettings{
     this.skipTargetIfValidates: true,
     this.focusType: FocusType.focusAndOpenKeyboard,
     this.submitFormIfAllValid: true,
-  });
-}
-
-class FieldSettings{
-  final Duration keyboardWait;
-  final Duration scrollDuration;
-  final Curve scrollCurve;
-  final bool ensureVisibleOnFieldFocus;
-  final bool ensureVisibleOnReOpenKeyboard;
-  final bool ensureVisibleOnKeyboardType;
-
-  FieldSettings({
-    this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
-    this.scrollDuration: const Duration(milliseconds: 100),
-    this.scrollCurve: Curves.ease,
-    this.ensureVisibleOnFieldFocus: true,
-    this.ensureVisibleOnReOpenKeyboard: true,
-    this.ensureVisibleOnKeyboardType: true,
   });
 }

@@ -39,7 +39,6 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-----form field params
 
-  FieldSettings fieldSettings;
   Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   Map<FocusNode, TextEditingController> focusNodeToController;
@@ -79,14 +78,15 @@ class SignUpFromState extends State<SignUpForm> {
     focusNodeToController = new Map<FocusNode, TextEditingController>();
     focusNodeToTextInField = new Map<FocusNode, ValueNotifier<bool>>();
     Map<FocusNode, Function> focusNodeToErrorRetrievers =
-    new Map<FocusNode, Function>();
+        new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
-      new ValueNotifier<String>(""); //this SHOULD NOT start off as null
+          new ValueNotifier<String>(""); //this SHOULD NOT start off as null
       focusNodeToError[focusNodes[nodeID]] =
-      new ValueNotifier<String>(null); //this SHOULD start off as null
+          new ValueNotifier<String>(null); //this SHOULD start off as null
       focusNodeToController[focusNodes[nodeID]] = new TextEditingController();
-      focusNodeToTextInField[focusNodes[nodeID]] = new ValueNotifier<bool>(false);
+      focusNodeToTextInField[focusNodes[nodeID]] =
+          new ValueNotifier<bool>(false);
       focusNodeToErrorRetrievers[focusNodes[nodeID]] = errorRetrievers[nodeID];
     }
 
@@ -103,11 +103,6 @@ class SignUpFromState extends State<SignUpForm> {
       focusNodeToValue: focusNodeToValue,
       focusNodeToTextInField: focusNodeToTextInField,
     );
-
-    //-----Set the field settings for all your fields
-    // (if you wanted different settings for each field for some strange reason, you could do this as well)
-
-    fieldSettings = new FieldSettings(); //all the default field settings work in the particular scenario
 
     super.initState();
   }
@@ -145,9 +140,9 @@ class SignUpFromState extends State<SignUpForm> {
                           padding: EdgeInsets.all(0.0),
                           onPressed: () {
                             Scaffold.of(context).showSnackBar(
-                              SnackBar(
-                                  content: new Text("Go To Login Page")),
-                            );
+                                  SnackBar(
+                                      content: new Text("Go To Login Page")),
+                                );
                           },
                           child: new Text("Already Have An Account?"),
                         ),
@@ -176,9 +171,7 @@ class SignUpFromState extends State<SignUpForm> {
     return TextFormFieldHelper(
       focusNode: emailFocusNode,
       formData: formData,
-      fieldSettings: fieldSettings,
-      builder: (context, child){
-        ensureVisible(context, emailFocusNode);
+      builder: (context, child) {
         return new Padding(
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
           child: new TextFormField(
@@ -192,17 +185,19 @@ class SignUpFromState extends State<SignUpForm> {
                 padding: EdgeInsets.only(right: 16.0),
                 child: new Icon(Icons.mail),
               ),
-              suffixIcon:
-              (emailFocusNode.hasFocus && focusNodeToTextInField[emailFocusNode].value)
+              suffixIcon: (emailFocusNode.hasFocus &&
+                      focusNodeToTextInField[emailFocusNode].value)
                   ? new GestureDetector(
-                onTap: () => clearField(formData, emailFocusNode),
-                child: new Icon(Icons.close),
-              )
+                      onTap: () => clearField(formData, emailFocusNode),
+                      child: new Icon(Icons.close),
+                    )
                   : new Text(""),
             ),
             keyboardType: TextInputType.emailAddress,
-            onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
-            onFieldSubmitted: (value) => defaultSubmitField(formData, emailFocusNode, value, true),
+            onSaved: (value) =>
+                saveField(focusNodeToValue[emailFocusNode], value),
+            onFieldSubmitted: (value) =>
+                defaultSubmitField(formData, emailFocusNode, value, true),
           ),
         );
       },
@@ -212,10 +207,8 @@ class SignUpFromState extends State<SignUpForm> {
   Widget passwordField(BuildContext context) {
     return TextFormFieldHelper(
       focusNode: passwordFocusNode,
-      fieldSettings: fieldSettings,
       formData: formData,
-      builder: (context, child){
-        ensureVisible(context, passwordFocusNode);
+      builder: (context, child) {
         return Padding(
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
           child: new TextFormField(
@@ -232,11 +225,12 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  (passwordFocusNode.hasFocus && focusNodeToTextInField[passwordFocusNode].value)
+                  (passwordFocusNode.hasFocus &&
+                          focusNodeToTextInField[passwordFocusNode].value)
                       ? new GestureDetector(
-                    onTap: () => clearField(formData, passwordFocusNode),
-                    child: new Icon(Icons.close),
-                  )
+                          onTap: () => clearField(formData, passwordFocusNode),
+                          child: new Icon(Icons.close),
+                        )
                       : new Text(""),
                   GestureDetector(
                     onTap: () {
@@ -248,13 +242,13 @@ class SignUpFromState extends State<SignUpForm> {
                       padding: EdgeInsets.only(left: 8.0),
                       child: (showPassword)
                           ? new Icon(
-                        Icons.lock_open,
-                        color: Theme.of(context).hintColor,
-                      )
+                              Icons.lock_open,
+                              color: Theme.of(context).hintColor,
+                            )
                           : new Icon(
-                        Icons.lock_outline,
-                        color: Theme.of(context).hintColor,
-                      ),
+                              Icons.lock_outline,
+                              color: Theme.of(context).hintColor,
+                            ),
                     ),
                   ),
                 ],
@@ -263,7 +257,8 @@ class SignUpFromState extends State<SignUpForm> {
             obscureText: (showPassword) ? false : true,
             onSaved: (value) =>
                 saveField(focusNodeToValue[passwordFocusNode], value),
-            onFieldSubmitted: (value) => defaultSubmitField(formData, passwordFocusNode, value, true),
+            onFieldSubmitted: (value) =>
+                defaultSubmitField(formData, passwordFocusNode, value, true),
           ),
         );
       },
@@ -273,10 +268,8 @@ class SignUpFromState extends State<SignUpForm> {
   Widget confirmPasswordField(BuildContext context) {
     return TextFormFieldHelper(
       focusNode: confirmPasswordFocusNode,
-      fieldSettings: fieldSettings,
       formData: formData,
-      builder: (context, child){
-        ensureVisible(context, confirmPasswordFocusNode);
+      builder: (context, child) {
         return new Padding(
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
           child: new TextFormField(
@@ -292,11 +285,14 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  (confirmPasswordFocusNode.hasFocus && focusNodeToTextInField[confirmPasswordFocusNode].value)
+                  (confirmPasswordFocusNode.hasFocus &&
+                          focusNodeToTextInField[confirmPasswordFocusNode]
+                              .value)
                       ? new GestureDetector(
-                    onTap: () => clearField(formData, confirmPasswordFocusNode),
-                    child: new Icon(Icons.close),
-                  )
+                          onTap: () =>
+                              clearField(formData, confirmPasswordFocusNode),
+                          child: new Icon(Icons.close),
+                        )
                       : new Text(""),
                   GestureDetector(
                     onTap: () {
@@ -308,21 +304,23 @@ class SignUpFromState extends State<SignUpForm> {
                       padding: EdgeInsets.only(left: 8.0),
                       child: (showConfirmPassword)
                           ? new Icon(
-                        Icons.lock_open,
-                        color: Theme.of(context).hintColor,
-                      )
+                              Icons.lock_open,
+                              color: Theme.of(context).hintColor,
+                            )
                           : new Icon(
-                        Icons.lock_outline,
-                        color: Theme.of(context).hintColor,
-                      ),
+                              Icons.lock_outline,
+                              color: Theme.of(context).hintColor,
+                            ),
                     ),
                   ),
                 ],
               ),
             ),
             obscureText: (showConfirmPassword) ? false : true,
-            onSaved: (value) => saveField(focusNodeToValue[confirmPasswordFocusNode], value),
-            onFieldSubmitted: (value) => defaultSubmitField(formData, confirmPasswordFocusNode, value, true),
+            onSaved: (value) =>
+                saveField(focusNodeToValue[confirmPasswordFocusNode], value),
+            onFieldSubmitted: (value) => defaultSubmitField(
+                formData, confirmPasswordFocusNode, value, true),
           ),
         );
       },
@@ -332,56 +330,93 @@ class SignUpFromState extends State<SignUpForm> {
   Widget signUpButton(BuildContext context) {
     return new RaisedButton(
       onPressed: () => refocus(
-        formData,
-        new RefocusSettings(
-          validationScheme: ValidationScheme.validateAllThenRefocus,
-        ),
-      ),
+            formData,
+            new RefocusSettings(
+              validationScheme: ValidationScheme.validateAllThenRefocus,
+            ),
+          ),
       child: new Text("SIGN UP"),
     );
   }
 
   //-------------------------Per Field Functions-------------------------
 
-  String getEmailValidationError(){
-    if(focusNodeToValue[emailFocusNode].value.isNotEmpty == false) return "Email Required";
-    else if(isEmail(focusNodeToValue[emailFocusNode].value) != true) return "Valid Email Required";
-    else return null;
+  String getEmailValidationError() {
+    if (focusNodeToValue[emailFocusNode].value.isNotEmpty == false)
+      return "Email Required";
+    else if (isEmail(focusNodeToValue[emailFocusNode].value) != true)
+      return "Valid Email Required";
+    else
+      return null;
   }
 
-  String getPasswordValidationError(bool firstPass){
+  String getPasswordValidationError(bool firstPass) {
     String firstPassword = focusNodeToValue[passwordFocusNode].value;
     String secondPassword = focusNodeToValue[confirmPasswordFocusNode].value;
 
     //make sure this particular password is valid
-    if(firstPass){
-      if(focusNodeToValue[passwordFocusNode].value.isNotEmpty == false) return "Password Required";
-      else if(focusNodeToValue[passwordFocusNode].value.length < 6) return "The Password Requires 6 Characters Or More";
-    }
-    else{
-      if(focusNodeToValue[confirmPasswordFocusNode].value.isNotEmpty == false) return "Password Required";
-      else if(focusNodeToValue[confirmPasswordFocusNode].value.length < 6) return "The Password Requires 6 Characters Or More";
+    if (firstPass) {
+      if (focusNodeToValue[passwordFocusNode].value.isNotEmpty == false)
+        return "Password Required";
+      else if (focusNodeToValue[passwordFocusNode].value.length < 6)
+        return "The Password Requires 6 Characters Or More";
+    } else {
+      if (focusNodeToValue[confirmPasswordFocusNode].value.isNotEmpty == false)
+        return "Password Required";
+      else if (focusNodeToValue[confirmPasswordFocusNode].value.length < 6)
+        return "The Password Requires 6 Characters Or More";
     }
 
+    //Note: we don't check our counter part here because we assume that either
+    //1. It has yet to be filled out
+    //    - so we don't scare our user with red
+    //2. It has been filled out...
+    //  2a. and it has its own individual error
+    //    - where its implicit the passwords don't match because it didn't even pass its individual tests
+    //    - much less match up to us that did pass our individual tests [because otherwise we would have returned by now]
+    //    - consequently, showing individual error reveals more than just saying that the passwords don't match
+    //  2b. and it does not have it own individual error
+    //    - so now it must be checked against us
+
     //make sure both passwords are valid together
-    if(firstPassword.isNotEmpty && secondPassword.isNotEmpty){
-      if(firstPassword != secondPassword) return "The Passwords Don't Match";
-      else return null;
+    if (firstPassword.isNotEmpty && secondPassword.isNotEmpty) {
+      if (firstPassword != secondPassword){
+        //this particular case means that we are valid... but it only says that our counter part is not empty
+        //so this revels 2 cases for our counter part
+        //  1. It doesn't meet all of its individual tests
+        //    - in which case as explained above, the individual error should stay because its more descriptive
+        //  2. It does meet all of its individual tests
+        //    - in which case it might be best to also indicate in its field that the passwords don't match TODO... add this...
+        return "The Passwords Don't Match";
+      }
+      else {
+        //this particular case means that we are valid... and our counter part is valid... and it matches us
+        //however although our error will be cleared out, our counter part might have had an error and it has to be cleared out too TODO... add this...
+        return null;
+      }
+    } else {
+      //this particular case means that we are valid... but our counter part is empty
+      //our counter part can be empty for 2 reasons
+      //  1. it was never filled out
+      //    - in which case we don't want to scare our users with red
+      //  2. it was filled out and erased
+      //    - in which case the individual error will already be shown
+      return null;
     }
-    else return null;
   }
 
   String getFirstPasswordValidationError() => getPasswordValidationError(true);
-  String getSecondPasswordValidationError() => getPasswordValidationError(false);
+  String getSecondPasswordValidationError() =>
+      getPasswordValidationError(false);
 
   //-------------------------Form Functions-------------------------
 
   submitForm(bool fieldsValidated) async {
     if (fieldsValidated) {
       Scaffold.of(context).showSnackBar(
-        SnackBar(
-            content: new Text("Uncomment FireBase Integration Once Ready")),
-      );
+            SnackBar(
+                content: new Text("Uncomment FireBase Integration Once Ready")),
+          );
       /*
       try {
         FirebaseUser user =
