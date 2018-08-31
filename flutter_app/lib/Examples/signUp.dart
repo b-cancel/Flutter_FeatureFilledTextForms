@@ -177,19 +177,19 @@ class SignUpFromState extends State<SignUpForm> {
       textEditingController: focusNodeToController[emailFocusNode],
       fieldSettings: fieldSettings,
       textInField: focusNodeToTextInField[emailFocusNode],
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: new AnimatedBuilder(
-          animation: focusNodeToTextInField[emailFocusNode],
-          builder: (context, child) {
-            return new AnimatedBuilder(
-              animation: focusNodeToError[emailFocusNode],
-              builder: (context, child) {
-                return new AnimatedBuilder(
-                  animation: emailFocusNode,
-                  builder: (context, child) {
-                    ensureVisible(context, emailFocusNode);
-                    return new TextFormField(
+      child: new AnimatedBuilder(
+        animation: focusNodeToTextInField[emailFocusNode],
+        builder: (context, child) {
+          return new AnimatedBuilder(
+            animation: focusNodeToError[emailFocusNode],
+            builder: (context, child) {
+              return new AnimatedBuilder(
+                animation: emailFocusNode,
+                builder: (context, child) {
+                  ensureVisible(context, emailFocusNode);
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: new TextFormField(
                       controller: focusNodeToController[emailFocusNode],
                       focusNode: emailFocusNode,
                       decoration: new InputDecoration(
@@ -211,13 +211,13 @@ class SignUpFromState extends State<SignUpForm> {
                       keyboardType: TextInputType.emailAddress,
                       onSaved: (value) => saveField(focusNodeToValue[emailFocusNode], value),
                       onFieldSubmitted: (value) => defaultSubmitField(formData, emailFocusNode, value, true),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -228,19 +228,19 @@ class SignUpFromState extends State<SignUpForm> {
       textEditingController: focusNodeToController[passwordFocusNode],
       fieldSettings: fieldSettings,
       textInField: focusNodeToTextInField[passwordFocusNode],
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: new AnimatedBuilder(
-          animation: focusNodeToTextInField[passwordFocusNode],
-          builder: (context, child){
-            return new AnimatedBuilder(
-              animation: passwordFocusNode,
-              builder: (context, child) {
-                return new AnimatedBuilder(
-                  animation: focusNodeToError[passwordFocusNode],
-                  builder: (context, child) {
-                    ensureVisible(context, passwordFocusNode);
-                    return new TextFormField(
+      child: new AnimatedBuilder(
+        animation: focusNodeToTextInField[passwordFocusNode],
+        builder: (context, child){
+          return new AnimatedBuilder(
+            animation: passwordFocusNode,
+            builder: (context, child) {
+              return new AnimatedBuilder(
+                animation: focusNodeToError[passwordFocusNode],
+                builder: (context, child) {
+                  ensureVisible(context, passwordFocusNode);
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: new TextFormField(
                       controller: focusNodeToController[passwordFocusNode],
                       focusNode: passwordFocusNode,
                       decoration: new InputDecoration(
@@ -286,13 +286,13 @@ class SignUpFromState extends State<SignUpForm> {
                       onSaved: (value) =>
                           saveField(focusNodeToValue[passwordFocusNode], value),
                       onFieldSubmitted: (value) => defaultSubmitField(formData, passwordFocusNode, value, true),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -303,19 +303,19 @@ class SignUpFromState extends State<SignUpForm> {
       textEditingController: focusNodeToController[confirmPasswordFocusNode],
       fieldSettings: fieldSettings,
       textInField: focusNodeToTextInField[confirmPasswordFocusNode],
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: new AnimatedBuilder(
-          animation: focusNodeToTextInField[confirmPasswordFocusNode],
-          builder: (context, child){
-            return new AnimatedBuilder(
-              animation: confirmPasswordFocusNode,
-              builder: (context, builder) {
-                return new AnimatedBuilder(
-                  animation: focusNodeToError[confirmPasswordFocusNode],
-                  builder: (context, child) {
-                    ensureVisible(context, confirmPasswordFocusNode);
-                    return new TextFormField(
+      child: new AnimatedBuilder(
+        animation: focusNodeToTextInField[confirmPasswordFocusNode],
+        builder: (context, child){
+          return new AnimatedBuilder(
+            animation: confirmPasswordFocusNode,
+            builder: (context, builder) {
+              return new AnimatedBuilder(
+                animation: focusNodeToError[confirmPasswordFocusNode],
+                builder: (context, child) {
+                  ensureVisible(context, confirmPasswordFocusNode);
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: new TextFormField(
                       controller: focusNodeToController[confirmPasswordFocusNode],
                       focusNode: confirmPasswordFocusNode,
                       decoration: new InputDecoration(
@@ -359,13 +359,13 @@ class SignUpFromState extends State<SignUpForm> {
                       obscureText: (showConfirmPassword) ? false : true,
                       onSaved: (value) => saveField(focusNodeToValue[confirmPasswordFocusNode], value),
                       onFieldSubmitted: (value) => defaultSubmitField(formData, confirmPasswordFocusNode, value, true),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
   }

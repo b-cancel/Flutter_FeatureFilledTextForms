@@ -449,7 +449,6 @@ class FormData{
 
 enum ValidationScheme {validateAllThenRefocus, validateUntilRefocus}
 enum ValidationType {check, checkAndShow}
-enum TargetsAvailable {others, selfOrOthers}
 enum SearchDirection {topToBottom, bottomToTop}
 
 class RefocusSettings{
