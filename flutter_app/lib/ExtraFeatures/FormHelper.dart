@@ -275,6 +275,32 @@ int _getIndexBefore(int currIndex, int maxIndex){
 }
 
 ///-------------------------Text Form Field Helper Widget-------------------------
+///
+/*
+TextFormFieldHelper(
+      focusNode: emailFocusNode,
+      textEditingController: focusNodeToController[emailFocusNode],
+      fieldSettings: fieldSettings,
+      textInField: focusNodeToTextInField[emailFocusNode],
+      child: new AnimatedBuilder(
+        animation: focusNodeToTextInField[emailFocusNode],
+        builder: (context, child) {
+          return new AnimatedBuilder(
+            animation: focusNodeToError[emailFocusNode],
+            builder: (context, child) {
+              return new AnimatedBuilder(
+                animation: emailFocusNode,
+                builder: (context, child) {
+                  ensureVisible(context, emailFocusNode);
+                  return THINGY
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+ */
 
 class TextFormFieldHelper extends StatefulWidget {
 
@@ -296,23 +322,24 @@ class TextFormFieldHelper extends StatefulWidget {
   /// even if [ensureVisibleOnFieldFocus] and [ensureVisibleOnReOpenKeyboard] are both false,
   /// you will still initially scroll to the field the first time it's focused
 
-  ///required variables
-  final Widget child;
-  final FocusNode focusNode;
+  /*
   final TextEditingController textEditingController; ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
   ///ONLY NEEDED if you want to detect when there is text in field so that you can make the clear field option visible
   /// ALSO REQUIRES textEditingController
   final ValueNotifier<bool> textInField;
+   */
+
+  ///required variables
+  final FocusNode focusNode;
+  final FormData formData;
   final FieldSettings fieldSettings;
+  final TransitionBuilder builder;
 
   const TextFormFieldHelper({
-    @required this.child,
     @required this.focusNode,
-    this.textEditingController, ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
-    ///ONLY NEEDED if you want to detect when there is text in field so that you can make the clear field option visible
-    /// ALSO REQUIRES textEditingController
-    this.textInField,
+    @required this.formData,
     @required this.fieldSettings,
+    @required this.builder,
   });
 
   @override
@@ -330,15 +357,15 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     else{
       if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null){
-      widget.textEditingController.addListener(waitForKeyboardToOpenAndEnsureVisible);
+    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
+      widget.formData.focusNodeToController[widget.focusNode].addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.textInField != null && widget.textEditingController != null){
+    if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
       trueWhenTextInField = (){
-        if((widget.textEditingController.text.length ?? 0) > 0) widget.textInField.value = true;
-        else widget.textInField.value = false;
+        if((widget.formData.focusNodeToController[widget.focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[widget.focusNode].value = true;
+        else widget.formData.focusNodeToTextInField[widget.focusNode].value = false;
       };
-      widget.textEditingController.addListener(trueWhenTextInField);
+      widget.formData.focusNodeToController[widget.focusNode].addListener(trueWhenTextInField);
     }
   }
 
@@ -348,11 +375,11 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     else{
       if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null) {
-      widget.textEditingController.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
+      widget.formData.focusNodeToController[widget.focusNode].removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.textInField != null && widget.textEditingController != null){
-      widget.textEditingController.removeListener(trueWhenTextInField);
+    if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
+      widget.formData.focusNodeToController[widget.focusNode].removeListener(trueWhenTextInField);
     }
     super.dispose();
   }
@@ -382,7 +409,20 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    return new AnimatedBuilder(
+      animation: widget.formData.focusNodeToTextInField[widget.focusNode],
+      builder: (context, child) {
+        return new AnimatedBuilder(
+          animation: widget.formData.focusNodeToError[widget.focusNode],
+          builder: (context, child) {
+            return new AnimatedBuilder(
+              animation: widget.focusNode,
+              builder: widget.builder,
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -434,6 +474,7 @@ class FormData{
   final Map<FocusNode, Function> focusNodeToErrorRetrievers;
   final Map<FocusNode, TextEditingController> focusNodeToController;
   final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
+  final Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
 
   FormData({
     @required this.context,
@@ -444,6 +485,7 @@ class FormData{
     @required this.focusNodeToErrorRetrievers,
     @required this.focusNodeToController,
     @required this.focusNodeToValue,
+    @required this.focusNodeToTextInField,
   });
 }
 
