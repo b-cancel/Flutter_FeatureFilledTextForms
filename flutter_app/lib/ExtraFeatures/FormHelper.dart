@@ -120,7 +120,12 @@ class _FormHelperState extends State<FormHelper> {
       focusNodeListenerFunctions = new List<Function>();
       for (int i = 0; i < widget.formData.focusNodes.length; i++) {
         FocusNode focusNode = widget.formData.focusNodes[i];
-        focusNodeListenerFunctions.add(generateFocusNodeListenerFunction(widget.formData, focusNode));
+        focusNodeListenerFunctions.add(() {
+          if (focusNode.hasFocus == false) {
+            widget.formKey.currentState.save();
+            validateField(widget.formData, focusNode);
+          }
+        });
         widget.formData.focusNodes[i].addListener(focusNodeListenerFunctions[i]);
       }
     }
@@ -158,15 +163,6 @@ class _FormHelperState extends State<FormHelper> {
         child: widget.child,
       ),
     );
-  }
-
-  Function generateFocusNodeListenerFunction(FormData formData, FocusNode focusNode) {
-    return () {
-      if (focusNode.hasFocus == false) {
-        widget.formKey.currentState.save();
-        validateField(formData, focusNode);
-      }
-    };
   }
 }
 
@@ -304,13 +300,18 @@ class TextFormFieldHelper extends StatefulWidget {
   final Widget child;
   final FocusNode focusNode;
   final TextEditingController textEditingController; ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
+  ///ONLY NEEDED if you want to detect when there is text in field so that you can make the clear field option visible
+  /// ALSO REQUIRES textEditingController
+  final ValueNotifier<bool> textInField;
   final FieldSettings fieldSettings;
-
 
   const TextFormFieldHelper({
     @required this.child,
     @required this.focusNode,
     this.textEditingController, ///If ([ensureVisibleOnKeyboardType] == true) => this must NOT be null
+    ///ONLY NEEDED if you want to detect when there is text in field so that you can make the clear field option visible
+    /// ALSO REQUIRES textEditingController
+    this.textInField,
     @required this.fieldSettings,
   });
 
@@ -319,6 +320,8 @@ class TextFormFieldHelper extends StatefulWidget {
 }
 
 class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver  {
+
+  Function trueWhenTextInField;
 
   @override
   void initState(){
@@ -330,6 +333,13 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null){
       widget.textEditingController.addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
+    if(widget.textInField != null && widget.textEditingController != null){
+      trueWhenTextInField = (){
+        if((widget.textEditingController.text.length ?? 0) > 0) widget.textInField.value = true;
+        else widget.textInField.value = false;
+      };
+      widget.textEditingController.addListener(trueWhenTextInField);
+    }
   }
 
   @override
@@ -338,7 +348,12 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     else{
       if(widget.fieldSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null) widget.textEditingController.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    if(widget.fieldSettings.ensureVisibleOnKeyboardType && widget.textEditingController != null) {
+      widget.textEditingController.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    }
+    if(widget.textInField != null && widget.textEditingController != null){
+      widget.textEditingController.removeListener(trueWhenTextInField);
+    }
     super.dispose();
   }
 
