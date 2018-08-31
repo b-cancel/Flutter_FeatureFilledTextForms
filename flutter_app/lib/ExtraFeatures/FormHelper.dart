@@ -232,7 +232,7 @@ class TextFormFieldHelper extends StatefulWidget {
   final bool ensureVisibleOnKeyboardType;
 
   //final bool rebuildWidgetOnFieldContentChangeBetweenNoContentAndSomeContent; //TODO make sure this is only used for displaying our clear field button
-  //final bool rebuildWidgetOnFieldFocusNodeChange; //TODO check if this is only used for displyaing our clear field button
+  //final bool rebuildWidgetOnFieldFocusNodeChange; //TODO check if this is only used for displaying our clear field button
   //final bool rebuildWidgetOnFieldErrorChange;
 
   const TextFormFieldHelper({
@@ -422,4 +422,58 @@ class RefocusSettings{
     this.focusType: FocusType.focusAndOpenKeyboard,
     this.submitFormIfAllValid: true,
   });
+}
+
+///-------------------------Extra Helper Widgets-------------------------
+
+Widget passwordShowHideButton(
+    bool show,
+    {
+      IconData showIcon: Icons.lock_outline,
+      IconData hideIcon: Icons.lock_open,
+      Color iconColor,
+      EdgeInsetsGeometry padding: const EdgeInsets.only(left: 8.0),
+    }){
+  return new Padding(
+    padding: padding,
+    child: (show)
+        ? new Icon(
+      hideIcon,
+      color: iconColor,
+    )
+        : new Icon(
+      showIcon,
+      color: iconColor,
+    ),
+  );
+}
+
+enum ClearFieldAppearOn {fieldFocused, fieldNotEmpty, fieldFocusedAndFieldNotEmpty, never}
+
+Widget clearFieldButton(FormData formData, FocusNode focusNode, {ClearFieldAppearOn clearFieldAppearOn: ClearFieldAppearOn.fieldFocusedAndFieldNotEmpty}){
+  bool fieldFocused = focusNode.hasFocus;
+  bool fieldNotEmpty = formData.focusNodeToTextInField[focusNode].value;
+  Widget show = new GestureDetector(
+    onTap: () =>  clearField(formData, focusNode),
+    child: new Icon(Icons.close),
+  );
+  Widget hide = new Text("");
+
+  switch(clearFieldAppearOn){
+    case ClearFieldAppearOn.fieldFocusedAndFieldNotEmpty:
+      if(fieldFocused && fieldNotEmpty ) return show;
+      else return hide;
+      break;
+    case ClearFieldAppearOn.fieldFocused:
+      if(fieldFocused) return show;
+      else return hide;
+      break;
+    case ClearFieldAppearOn.fieldNotEmpty:
+      if(fieldNotEmpty) return show;
+      else return hide;
+      break;
+    default:
+      return hide;
+      break;
+  }
 }

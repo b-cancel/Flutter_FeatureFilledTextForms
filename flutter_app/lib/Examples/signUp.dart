@@ -185,13 +185,7 @@ class SignUpFromState extends State<SignUpForm> {
                 padding: EdgeInsets.only(right: 16.0),
                 child: new Icon(Icons.mail),
               ),
-              suffixIcon: (emailFocusNode.hasFocus &&
-                      focusNodeToTextInField[emailFocusNode].value)
-                  ? new GestureDetector(
-                      onTap: () => clearField(formData, emailFocusNode),
-                      child: new Icon(Icons.close),
-                    )
-                  : new Text(""),
+              suffixIcon: clearFieldButton(formData, emailFocusNode),
             ),
             keyboardType: TextInputType.emailAddress,
             onSaved: (value) =>
@@ -225,31 +219,14 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  (passwordFocusNode.hasFocus &&
-                          focusNodeToTextInField[passwordFocusNode].value)
-                      ? new GestureDetector(
-                          onTap: () => clearField(formData, passwordFocusNode),
-                          child: new Icon(Icons.close),
-                        )
-                      : new Text(""),
+                  clearFieldButton(formData, passwordFocusNode),
                   GestureDetector(
                     onTap: () {
                       setState(() {
                         showPassword = !showPassword;
                       });
                     },
-                    child: new Padding(
-                      padding: EdgeInsets.only(left: 8.0),
-                      child: (showPassword)
-                          ? new Icon(
-                              Icons.lock_open,
-                              color: Theme.of(context).hintColor,
-                            )
-                          : new Icon(
-                              Icons.lock_outline,
-                              color: Theme.of(context).hintColor,
-                            ),
-                    ),
+                    child: passwordShowHideButton(showPassword, iconColor: Theme.of(context).hintColor),
                   ),
                 ],
               ),
@@ -285,33 +262,14 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  (confirmPasswordFocusNode.hasFocus &&
-                          focusNodeToTextInField[confirmPasswordFocusNode]
-                              .value)
-                      ? new GestureDetector(
-                          onTap: () =>
-                              clearField(formData, confirmPasswordFocusNode),
-                          child: new Icon(Icons.close),
-                        )
-                      : new Text(""),
+                  clearFieldButton(formData, confirmPasswordFocusNode),
                   GestureDetector(
                     onTap: () {
                       setState(() {
                         showConfirmPassword = !showConfirmPassword;
                       });
                     },
-                    child: new Padding(
-                      padding: EdgeInsets.only(left: 8.0),
-                      child: (showConfirmPassword)
-                          ? new Icon(
-                              Icons.lock_open,
-                              color: Theme.of(context).hintColor,
-                            )
-                          : new Icon(
-                              Icons.lock_outline,
-                              color: Theme.of(context).hintColor,
-                            ),
-                    ),
+                    child: passwordShowHideButton(showConfirmPassword, iconColor: Theme.of(context).hintColor),
                   ),
                 ],
               ),
@@ -350,20 +308,20 @@ class SignUpFromState extends State<SignUpForm> {
       return null;
   }
 
-  String getPasswordValidationError(bool firstPass) {
-    String firstPassword = focusNodeToValue[passwordFocusNode].value;
-    String secondPassword = focusNodeToValue[confirmPasswordFocusNode].value;
+  String getPasswordValidationError(bool forPassword) {
+    String passwordString = focusNodeToValue[passwordFocusNode].value;
+    String confirmPasswordString = focusNodeToValue[confirmPasswordFocusNode].value;
 
-    //make sure this particular password is valid
-    if (firstPass) {
-      if (focusNodeToValue[passwordFocusNode].value.isNotEmpty == false)
+    ///-----make sure this particular password is valid
+    if (forPassword) {
+      if (passwordString.isNotEmpty == false)
         return "Password Required";
-      else if (focusNodeToValue[passwordFocusNode].value.length < 6)
+      else if (passwordString.length < 6)
         return "The Password Requires 6 Characters Or More";
     } else {
-      if (focusNodeToValue[confirmPasswordFocusNode].value.isNotEmpty == false)
+      if (confirmPasswordString.isNotEmpty == false)
         return "Password Required";
-      else if (focusNodeToValue[confirmPasswordFocusNode].value.length < 6)
+      else if (confirmPasswordString.length < 6)
         return "The Password Requires 6 Characters Or More";
     }
 
@@ -378,20 +336,30 @@ class SignUpFromState extends State<SignUpForm> {
     //  2b. and it does not have it own individual error
     //    - so now it must be checked against us
 
-    //make sure both passwords are valid together
-    if (firstPassword.isNotEmpty && secondPassword.isNotEmpty) {
-      if (firstPassword != secondPassword){
+    ///-----make sure both passwords are valid together
+    if (passwordString.isNotEmpty && confirmPasswordString.isNotEmpty) {
+      if (passwordString != confirmPasswordString){
         //this particular case means that we are valid... but it only says that our counter part is not empty
         //so this revels 2 cases for our counter part
         //  1. It doesn't meet all of its individual tests
         //    - in which case as explained above, the individual error should stay because its more descriptive
         //  2. It does meet all of its individual tests
-        //    - in which case it might be best to also indicate in its field that the passwords don't match TODO... add this...
+        //    - in which case it might be best to also indicate in its field that the passwords don't match
+        if(forPassword && focusNodeToError[confirmPasswordFocusNode].value == null){
+          focusNodeToError[confirmPasswordFocusNode].value = "The Passwords Don't Match";
+        }
+        else if(focusNodeToError[passwordFocusNode].value == null){
+          focusNodeToError[passwordFocusNode].value = "The Passwords Don't Match";
+        }
+
         return "The Passwords Don't Match";
       }
       else {
         //this particular case means that we are valid... and our counter part is valid... and it matches us
-        //however although our error will be cleared out, our counter part might have had an error and it has to be cleared out too TODO... add this...
+        //however although our error will be cleared out, our counter part might have had an error and it has to be cleared out too
+        if(forPassword) focusNodeToError[confirmPasswordFocusNode].value = null;
+        else focusNodeToError[passwordFocusNode].value = null;
+
         return null;
       }
     } else {
@@ -406,8 +374,7 @@ class SignUpFromState extends State<SignUpForm> {
   }
 
   String getFirstPasswordValidationError() => getPasswordValidationError(true);
-  String getSecondPasswordValidationError() =>
-      getPasswordValidationError(false);
+  String getSecondPasswordValidationError() => getPasswordValidationError(false);
 
   //-------------------------Form Functions-------------------------
 

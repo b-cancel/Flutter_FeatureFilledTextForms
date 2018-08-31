@@ -18,8 +18,8 @@
       <file leaf-file-name="signUp.dart" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-3">
-              <caret line="393" column="151" lean-forward="false" selection-start-line="393" selection-start-column="151" selection-end-line="393" selection-end-column="151" />
+            <state relative-caret-position="303">
+              <caret line="358" column="89" lean-forward="false" selection-start-line="358" selection-start-column="86" selection-end-line="358" selection-end-column="89" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -30,8 +30,8 @@
       <file leaf-file-name="FormHelper.dart" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="320">
-              <caret line="235" column="47" lean-forward="false" selection-start-line="235" selection-start-column="47" selection-end-line="235" selection-end-column="47" />
+            <state relative-caret-position="456">
+              <caret line="456" column="17" lean-forward="false" selection-start-line="456" selection-start-column="17" selection-end-line="456" selection-end-column="17" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
               </folding>
@@ -50,7 +50,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>focusNodeToController</find>
       <find>submitform</find>
       <find>focusnodes</find>
       <find>focusnodetoerror</find>
@@ -79,6 +78,7 @@
       <find>generate</find>
       <find>emptyfocusnode</find>
       <find>refocussetting</find>
+      <find>focusNodeToTextIn</find>
       <find>focusNode</find>
     </findStrings>
   </component>
@@ -96,8 +96,8 @@
         <option value="$PROJECT_DIR$/lib/Examples/signIn.dart" />
         <option value="$PROJECT_DIR$/lib/main.dart" />
         <option value="$PROJECT_DIR$/lib/ExtraFeatures/EnsureVisible.dart" />
-        <option value="$PROJECT_DIR$/lib/Examples/signUp.dart" />
         <option value="$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart" />
+        <option value="$PROJECT_DIR$/lib/Examples/signUp.dart" />
       </list>
     </option>
   </component>
@@ -565,10 +565,26 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Program Files/flutter/packages/flutter/lib/src/widgets/icon.dart">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-14">
+          <caret line="21" column="18" lean-forward="true" selection-start-line="21" selection-start-column="18" selection-end-line="21" selection-end-column="18" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Program Files/flutter/packages/flutter/lib/src/widgets/basic.dart">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="1343" column="26" lean-forward="false" selection-start-line="1343" selection-start-column="8" selection-end-line="1343" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="320">
-          <caret line="235" column="47" lean-forward="false" selection-start-line="235" selection-start-column="47" selection-end-line="235" selection-end-column="47" />
+        <state relative-caret-position="456">
+          <caret line="456" column="17" lean-forward="false" selection-start-line="456" selection-start-column="17" selection-end-line="456" selection-end-column="17" />
           <folding>
             <element signature="e#0#20#0" expanded="true" />
           </folding>
@@ -577,8 +593,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3">
-          <caret line="393" column="151" lean-forward="false" selection-start-line="393" selection-start-column="151" selection-end-line="393" selection-end-column="151" />
+        <state relative-caret-position="303">
+          <caret line="358" column="89" lean-forward="false" selection-start-line="358" selection-start-column="86" selection-end-line="358" selection-end-column="89" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>
