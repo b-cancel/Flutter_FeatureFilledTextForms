@@ -189,7 +189,7 @@ class SignUpFromState extends State<SignUpForm> {
                 padding: EdgeInsets.only(right: 16.0),
                 child: new Icon(Icons.mail),
               ),
-              suffixIcon: clearFieldButton(formData, emailFocusNode),
+              suffixIcon: clearFieldButton(formData, emailFocusNode, clearFieldButtonAppearOn: formSettings.clearFieldBtnAppearOn),
             ),
             keyboardType: TextInputType.emailAddress,
             onSaved: (value) =>
@@ -224,7 +224,7 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  clearFieldButton(formData, passwordFocusNode),
+                  clearFieldButton(formData, passwordFocusNode, clearFieldButtonAppearOn: formSettings.clearFieldBtnAppearOn),
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -268,7 +268,7 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  clearFieldButton(formData, confirmPasswordFocusNode, clearFieldButtonAppearOn: ClearFieldBtnAppearOn.fieldNotEmpty),
+                  clearFieldButton(formData, confirmPasswordFocusNode, clearFieldButtonAppearOn: formSettings.clearFieldBtnAppearOn),
                   GestureDetector(
                     onTap: () {
                       setState(() {
