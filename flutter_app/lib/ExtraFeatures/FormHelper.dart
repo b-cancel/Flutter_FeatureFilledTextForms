@@ -120,6 +120,12 @@ clearField(FormData formData, FocusNode focusNode){
   saveField(formData.focusNodeToValue[focusNode], "");
   formData.focusNodeToController[focusNode].clear();
   formData.focusNodeToValue[focusNode].value = "";
+  //if we clear the field when we are not focused on it
+  //it makes sense that we validate the field because the user filled it out at one point
+  //and if it has some requirements we want to make those are visible before the user tries to submit the form
+  //TODO... add this as an option, perhaps a named variable with a default
+  if(focusNode.hasFocus == false)
+    validateField(formData, focusNode);
 }
 
 saveField(ValueNotifier<String> value, String newValue) => value.value = newValue;
@@ -220,36 +226,18 @@ int _getIndexBefore(int currIndex, int maxIndex){
 
 class TextFormFieldHelper extends StatefulWidget {
 
-  final FocusNode focusNode;
   final FormData formData;
+  final FormSettings formSettings;
+
+  final FocusNode focusNode;
   final TransitionBuilder builder;
 
-  final Duration keyboardWait;
-  final Duration scrollDuration;
-  final Curve scrollCurve;
-  final bool ensureVisibleOnFieldFocus;
-  final bool ensureVisibleOnReOpenKeyboard;
-  final bool ensureVisibleOnKeyboardType;
-
-  //final bool rebuildWidgetOnFieldContentChangeBetweenNoContentAndSomeContent; //TODO make sure this is only used for displaying our clear field button
-  //final bool rebuildWidgetOnFieldFocusNodeChange; //TODO check if this is only used for displaying our clear field button
-  //final bool rebuildWidgetOnFieldErrorChange;
-
   const TextFormFieldHelper({
-    this.focusNode,
     this.formData,
+    this.formSettings,
+
+    this.focusNode,
     this.builder,
-
-    this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
-    this.scrollDuration: const Duration(milliseconds: 100),
-    this.scrollCurve: Curves.ease,
-    this.ensureVisibleOnFieldFocus: true,
-    this.ensureVisibleOnReOpenKeyboard: true,
-    this.ensureVisibleOnKeyboardType: true,
-
-    //this.rebuildWidgetOnFieldContentChangeBetweenNoContentAndSomeContent: true,
-    //this.rebuildWidgetOnFieldFocusNodeChange: true,
-    //this.rebuildWidgetOnFieldErrorChange: true,
   });
 
   @override
@@ -258,16 +246,17 @@ class TextFormFieldHelper extends StatefulWidget {
 
 class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver  {
 
-  Function trueWhenTextInField;
+  Function trueWhenTextInField; //required so we can dispose of the listener when its time
 
   @override
   void initState(){
     super.initState();
-    if(widget.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
+
+    if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
     else{
-      if(widget.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
+      if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
+    if(widget.formSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
       widget.formData.focusNodeToController[widget.focusNode].addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
     if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
@@ -281,11 +270,11 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   void dispose(){
-    if(widget.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
+    if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
     else{
-      if(widget.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+      if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    if(widget.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
+    if(widget.formSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
       widget.formData.focusNodeToController[widget.focusNode].removeListener(waitForKeyboardToOpenAndEnsureVisible);
     }
     if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
@@ -296,14 +285,14 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   void didChangeMetrics(){
-    if(widget.ensureVisibleOnReOpenKeyboard && widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
+    if(widget.formSettings.ensureVisibleOnReOpenKeyboard && widget.focusNode.hasFocus) waitForKeyboardToOpenAndEnsureVisible();
   }
 
   Future<Null> waitForKeyboardToOpenAndEnsureVisible() async {
     // Wait for the keyboard to come into view (if it isn't in view already)
     if(MediaQuery.of(context).viewInsets == EdgeInsets.zero) await waitForKeyboardToOpen();
     // ensure our focusNode is visible
-    ensureVisible(context, widget.focusNode, duration: widget.scrollDuration, curve: widget.scrollCurve);
+    ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
   }
 
   Future<Null> waitForKeyboardToOpen() async {
@@ -311,7 +300,7 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
       EdgeInsets closedInsets = MediaQuery.of(context).viewInsets;
       //this works because MediaQuery.of(context).viewInsets only changes ONCE when the keyboard is FULLY open
       while (mounted && MediaQuery.of(context).viewInsets == closedInsets) {
-        await new Future.delayed(widget.keyboardWait);
+        await new Future.delayed(widget.formSettings.keyboardWait);
       }
     }
     return;
@@ -319,21 +308,100 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
-    return new AnimatedBuilder(
-      animation: widget.formData.focusNodeToTextInField[widget.focusNode],
-      builder: (context, child) {
+    //Note: The Order of the Animated Builders is very specific
+    //Ideally in the outside we would have the animated builders that reload the least, and in the inside we would have the animated builders that reload the most
+    //this would be to increase performance as much as possible so we reload the least amount of widgets per reload
+    //  - focusNode changes the least because it only occurs when we un focus or focus on a field
+    //  - focusNodeToTextInField has the chance of changing multiple times while the text field is focused
+    //    * but it only changes when the text field goes from having some to no text, or no text to some text
+    //    * this event generally doesn't happen all that often because it implies the user wiped all the text from the field
+    //  - focusNodeToError changes the most because the user might adjust their input multiple times until they meet the requirements and are no longer generating an error on submission of that field
+    //However, in order for ensureVisibleOnErrorAppear to work ensureVisible needs to run when the animated builder tied to widget.formData.focusNodeToError[widget.focusNode] rebuilds
+    // since we pass a builder into this function, in order for this to always be possible we need to nest the focusNodeToTextInField Animated Builder into the focusNodeToError Animated Builder
+    // although this solution is indeed suboptimal
+
+    //Developer Note: For some reason IF I construct the widget piece by piece depending on the conditionals it doesn't function as expected
+    // which is why im returning the entire widget depending on the conditionals and therefor repeat a lot of code
+
+    //Note: we automatically assume that you want to rebuild your widget when an error appears because not doing so never makes sense
+    // because it doesn't make sense to have errors and not let the user know they exist
+    // if you don't want the field to be able to register errors then you can simply make the validator for that field always return true
+
+    switch(widget.formSettings.clearFieldBtnAppearOn){
+      case ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty:
+        return new AnimatedBuilder(
+          animation: widget.focusNode,
+          builder: (context, child) {
+            return new AnimatedBuilder(
+              animation: widget.formData.focusNodeToError[widget.focusNode],
+              builder: (context, child) {
+                if(widget.formSettings.ensureVisibleOnErrorAppear) ensureVisible(context, widget.focusNode);
+                return new AnimatedBuilder(
+                  animation: widget.formData.focusNodeToTextInField[widget.focusNode],
+                  builder: widget.builder,
+                );
+              },
+            );
+          },
+        );
+        break;
+      case ClearFieldBtnAppearOn.fieldNotEmpty:
         return new AnimatedBuilder(
           animation: widget.formData.focusNodeToError[widget.focusNode],
           builder: (context, child) {
-            ensureVisible(context, widget.focusNode);
+            if(widget.formSettings.ensureVisibleOnErrorAppear) ensureVisible(context, widget.focusNode);
+            return new AnimatedBuilder(
+              animation: widget.formData.focusNodeToTextInField[widget.focusNode],
+              builder: widget.builder,
+            );
+          },
+        );
+        break;
+      case ClearFieldBtnAppearOn.fieldFocused:
+        return new AnimatedBuilder(
+          animation: widget.formData.focusNodeToError[widget.focusNode],
+          builder: (context, child) {
+            if(widget.formSettings.ensureVisibleOnErrorAppear) ensureVisible(context, widget.focusNode);
             return new AnimatedBuilder(
               animation: widget.focusNode,
               builder: widget.builder,
             );
           },
         );
-      },
-    );
+        break;
+      default:
+        if(widget.formSettings.ensureVisibleOnErrorAppear){
+          //Note: this is a bit of a waste because two animated builders are rebuilding triggered by the exact SAME animation
+          // but it simplifies the code for the user by not making them call ensureVisible manually
+          //  Alternatively they could could call "ensureVisible(context, theFocusNodeNameHere)" in the builder they pass to this widget instead and set "alternatively" below to true
+          bool alternatively = false;
+          if(alternatively){
+            return new AnimatedBuilder(
+              animation: widget.formData.focusNodeToError[widget.focusNode],
+              builder: widget.builder,
+            );
+          }
+          else{
+            return new AnimatedBuilder(
+                animation: widget.formData.focusNodeToError[widget.focusNode],
+                builder: (context, child){
+                  ensureVisible(context, widget.focusNode); //we already know we want this
+                  return new AnimatedBuilder(
+                    animation: widget.formData.focusNodeToError[widget.focusNode],
+                    builder: widget.builder,
+                  );
+                }
+            );
+          }
+        }
+        else{
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToError[widget.focusNode],
+            builder: widget.builder,
+          );
+        }
+        break;
+    }
   }
 
   ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease}) async{
@@ -398,6 +466,29 @@ class FormData{
   });
 }
 
+class FormSettings{
+
+  final Duration keyboardWait;
+  final Duration scrollDuration;
+  final Curve scrollCurve;
+  final bool ensureVisibleOnFieldFocus;
+  final bool ensureVisibleOnReOpenKeyboard;
+  final bool ensureVisibleOnKeyboardType;
+  final bool ensureVisibleOnErrorAppear;
+  final ClearFieldBtnAppearOn clearFieldBtnAppearOn;
+
+  FormSettings({
+    this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
+    this.scrollDuration: const Duration(milliseconds: 100),
+    this.scrollCurve: Curves.ease,
+    this.ensureVisibleOnFieldFocus: true,
+    this.ensureVisibleOnReOpenKeyboard: true,
+    this.ensureVisibleOnKeyboardType: true,
+    this.ensureVisibleOnErrorAppear: true,
+    this.clearFieldBtnAppearOn: ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty,
+  });
+}
+
 enum ValidationScheme {validateAllThenRefocus, validateUntilRefocus}
 enum ValidationType {check, checkAndShow}
 enum SearchDirection {topToBottom, bottomToTop}
@@ -426,31 +517,24 @@ class RefocusSettings{
 
 ///-------------------------Extra Helper Widgets-------------------------
 
-Widget passwordShowHideButton(
-    bool show,
-    {
-      IconData showIcon: Icons.lock_outline,
-      IconData hideIcon: Icons.lock_open,
-      Color iconColor,
-      EdgeInsetsGeometry padding: const EdgeInsets.only(left: 8.0),
-    }){
+Widget passwordShowHideButton(bool show, {Color iconColor,}){
   return new Padding(
-    padding: padding,
+    padding: const EdgeInsets.only(left: 8.0),
     child: (show)
         ? new Icon(
-      hideIcon,
+      Icons.lock_open,
       color: iconColor,
     )
         : new Icon(
-      showIcon,
+      Icons.lock_outline,
       color: iconColor,
     ),
   );
 }
 
-enum ClearFieldAppearOn {fieldFocused, fieldNotEmpty, fieldFocusedAndFieldNotEmpty, never}
+enum ClearFieldBtnAppearOn {fieldFocused, fieldNotEmpty, fieldFocusedAndFieldNotEmpty, never}
 
-Widget clearFieldButton(FormData formData, FocusNode focusNode, {ClearFieldAppearOn clearFieldAppearOn: ClearFieldAppearOn.fieldFocusedAndFieldNotEmpty}){
+Widget clearFieldButton(FormData formData, FocusNode focusNode, {ClearFieldBtnAppearOn clearFieldButtonAppearOn: ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty}){
   bool fieldFocused = focusNode.hasFocus;
   bool fieldNotEmpty = formData.focusNodeToTextInField[focusNode].value;
   Widget show = new GestureDetector(
@@ -459,16 +543,16 @@ Widget clearFieldButton(FormData formData, FocusNode focusNode, {ClearFieldAppea
   );
   Widget hide = new Text("");
 
-  switch(clearFieldAppearOn){
-    case ClearFieldAppearOn.fieldFocusedAndFieldNotEmpty:
+  switch(clearFieldButtonAppearOn){
+    case ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty:
       if(fieldFocused && fieldNotEmpty ) return show;
       else return hide;
       break;
-    case ClearFieldAppearOn.fieldFocused:
+    case ClearFieldBtnAppearOn.fieldFocused:
       if(fieldFocused) return show;
       else return hide;
       break;
-    case ClearFieldAppearOn.fieldNotEmpty:
+    case ClearFieldBtnAppearOn.fieldNotEmpty:
       if(fieldNotEmpty) return show;
       else return hide;
       break;

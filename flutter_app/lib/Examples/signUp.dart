@@ -36,6 +36,7 @@ class SignUpFromState extends State<SignUpForm> {
   final formKey = new GlobalKey<FormState>();
   final emptyFocusNode = new FocusNode();
   FormData formData;
+  FormSettings formSettings;
 
   //-----form field params
 
@@ -104,6 +105,8 @@ class SignUpFromState extends State<SignUpForm> {
       focusNodeToTextInField: focusNodeToTextInField,
     );
 
+    formSettings = new FormSettings();
+
     super.initState();
   }
 
@@ -169,8 +172,9 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget emailField(BuildContext context) {
     return TextFormFieldHelper(
-      focusNode: emailFocusNode,
       formData: formData,
+      formSettings: formSettings,
+      focusNode: emailFocusNode,
       builder: (context, child) {
         return new Padding(
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -200,8 +204,9 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget passwordField(BuildContext context) {
     return TextFormFieldHelper(
-      focusNode: passwordFocusNode,
       formData: formData,
+      formSettings: formSettings,
+      focusNode: passwordFocusNode,
       builder: (context, child) {
         return Padding(
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -244,8 +249,9 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget confirmPasswordField(BuildContext context) {
     return TextFormFieldHelper(
-      focusNode: confirmPasswordFocusNode,
       formData: formData,
+      formSettings: formSettings,
+      focusNode: confirmPasswordFocusNode,
       builder: (context, child) {
         return new Padding(
           padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -262,7 +268,7 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  clearFieldButton(formData, confirmPasswordFocusNode),
+                  clearFieldButton(formData, confirmPasswordFocusNode, clearFieldButtonAppearOn: ClearFieldBtnAppearOn.fieldNotEmpty),
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -288,11 +294,11 @@ class SignUpFromState extends State<SignUpForm> {
   Widget signUpButton(BuildContext context) {
     return new RaisedButton(
       onPressed: () => refocus(
-            formData,
-            new RefocusSettings(
-              validationScheme: ValidationScheme.validateAllThenRefocus,
-            ),
+          formData,
+          new RefocusSettings(
+            validationScheme: ValidationScheme.validateAllThenRefocus,
           ),
+        ),
       child: new Text("SIGN UP"),
     );
   }
