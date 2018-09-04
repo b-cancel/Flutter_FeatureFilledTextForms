@@ -10,16 +10,12 @@ import 'package:flutter/services.dart';
 ///     * so you must manually make sure you have all the parameters that you require for the features you desire to use
 ///     * I will try to specify which parameters are required under what conditions soon but if you would like to help me that would be great
 ///   - some functions are async (and/or/xor) wait Duration.zero so that things can be scheduled properly
-///     * "initFocus" needs this so that after build from your form runs and everything in the FormHelper is setup, then you are able to do a scrolling focus on your desired node TODO...
-///     * "listenForFocusNodeChanges" TODO...
-///     * "ensureVisible" only needs to be async so that when its called INIT or ON ERROR DETECTED TODO...
-///     * "focusField" TODO...
+///     * "initFocus" needs this so that after build from your form runs and everything in the FormHelper is setup, then you are able to do a scrolling focus on your desired node
+///     * "ensureVisible" only needs to be async so that when its called INIT or ON ERROR DETECTED it waits for build to run or for the error to show and then it ensures visible
 ///   - Animated Builders only rebuild if the value changes, if it was set to the exact same value it had before it is not considered a change
 ///     * this simplifies the code a bit
-
-///   - "ensureVisible" must be called from within a "FormHelper"
-///     * this is because it has a "SingleChildScrollView"
-///     * it having this means that "RenderAbstractViewport.of(object)" will have [RenderAbstractViewport] as an ancestor
+///   - the context parameter from "ensureVisible" must be have a "SingleChildScrollView" above it
+///     * this is because that means "RenderAbstractViewport.of(object)" will have [RenderAbstractViewport] as an ancestor
 ///     * which means that ensureVisible will work
 
 ///-------------------------Form Helper Widget-------------------------
@@ -31,7 +27,7 @@ class FormHelper extends StatefulWidget {
   final FormData formData;
   final RefocusSettings refocusSettings;
   final Widget child;
-  final bool generateFocusNodeListenerFunctions;
+  final bool saveAndValidateFieldOnFieldFocusLoseFocus;
   final FocusNode focusNodeForInitialFocus;
   final FocusType focusTypeForInitialFocus;
   final bool unFocusAllWhenTappingOutside;
@@ -41,7 +37,7 @@ class FormHelper extends StatefulWidget {
     this.formData,
     this.refocusSettings,
     this.child,
-    this.generateFocusNodeListenerFunctions: true,
+    this.saveAndValidateFieldOnFieldFocusLoseFocus: true,
     this.unFocusAllWhenTappingOutside: true,
     this.focusNodeForInitialFocus,
     this.focusTypeForInitialFocus: FocusType.focusAndLeaveKeyboard,
@@ -51,6 +47,8 @@ class FormHelper extends StatefulWidget {
   _FormHelperState createState() => _FormHelperState();
 }
 
+//TODO... save and validate field option...
+
 class _FormHelperState extends State<FormHelper> {
   List<Function> focusNodeListenerFunctions;
 
@@ -58,7 +56,7 @@ class _FormHelperState extends State<FormHelper> {
   void initState() {
 
     //generate focusNode listener functions, place them as listeners
-    if(widget.generateFocusNodeListenerFunctions){
+    if(widget.saveAndValidateFieldOnFieldFocusLoseFocus){
       focusNodeListenerFunctions = new List<Function>();
       for (int i = 0; i < widget.formData.focusNodes.length; i++) {
         FocusNode focusNode = widget.formData.focusNodes[i];
@@ -88,7 +86,7 @@ class _FormHelperState extends State<FormHelper> {
   void dispose() {
     for (int i = 0; i < widget.formData.focusNodes.length; i++) {
       FocusNode focusNode = widget.formData.focusNodes[i];
-      if(widget.generateFocusNodeListenerFunctions) focusNode.removeListener(focusNodeListenerFunctions[i]);
+      if(widget.saveAndValidateFieldOnFieldFocusLoseFocus) focusNode.removeListener(focusNodeListenerFunctions[i]);
       widget.formData.focusNodes[i].dispose();
     }
     if(widget.unFocusAllWhenTappingOutside) widget.formData.emptyFocusNode.dispose();
@@ -130,7 +128,7 @@ clearField(FormData formData, FocusNode focusNode){
 
 saveField(ValueNotifier<String> value, String newValue) => value.value = newValue;
 
-focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) async{
+focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) {
   FocusScope.of(context).requestFocus(focusNode);
   if(focusType != FocusType.focusAndLeaveKeyboard){
     if(focusType == FocusType.focusAndOpenKeyboard) SystemChannels.textInput.invokeMethod('TextInput.show');
@@ -205,7 +203,9 @@ refocus(FormData formData, RefocusSettings refocusSettings){
   }
 
   //refocus if we have not yet validated all of our fields
-  if(fieldToFocus != null) focusField(formData.context, fieldToFocus, focusType: refocusSettings.focusType);
+  if(fieldToFocus != null) {
+    focusField(formData.context, fieldToFocus, focusType: refocusSettings.focusType);
+  }
   else{
     //if we have validated all of our fields check if we can submit our data
     if(refocusSettings.submitFormIfAllValid) formData.submitForm(true);
