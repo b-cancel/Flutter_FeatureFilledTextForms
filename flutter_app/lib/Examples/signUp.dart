@@ -1,21 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-//import 'package:firebase_auth/firebase_auth.dart';
 
 import '../ExtraFeatures/FormHelper.dart';
 
 import 'package:validator/validator.dart';
-
-class SignUp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: new SignUpForm(),
-      ),
-    );
-  }
-}
 
 class SignUpForm extends StatefulWidget {
   const SignUpForm({
@@ -34,7 +22,6 @@ class SignUpFromState extends State<SignUpForm> {
   //-----form params
 
   final formKey = new GlobalKey<FormState>();
-  final emptyFocusNode = new FocusNode();
   FormData formData;
   FormSettings formSettings;
 
@@ -43,7 +30,6 @@ class SignUpFromState extends State<SignUpForm> {
   Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   Map<FocusNode, TextEditingController> focusNodeToController;
-  Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
 
   //-----per field params
 
@@ -69,15 +55,15 @@ class SignUpFromState extends State<SignUpForm> {
 
     List<Function> errorRetrievers = new List<Function>();
     errorRetrievers.add(getEmailValidationError);
-    errorRetrievers.add(getFirstPasswordValidationError);
-    errorRetrievers.add(getSecondPasswordValidationError);
+    errorRetrievers.add(getInitialPasswordValidationError);
+    errorRetrievers.add(getConfirmPasswordValidationError);
 
     //-----Automatic Variable Init
 
     focusNodeToValue = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
-    focusNodeToTextInField = new Map<FocusNode, ValueNotifier<bool>>();
+    Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField = new Map<FocusNode, ValueNotifier<bool>>();
     Map<FocusNode, Function> focusNodeToErrorRetrievers =
         new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
@@ -91,11 +77,11 @@ class SignUpFromState extends State<SignUpForm> {
       focusNodeToErrorRetrievers[focusNodes[nodeID]] = errorRetrievers[nodeID];
     }
 
-    //-----Form Data To Make Using Form Helper Easier
+    //-----Form Data and Form Settings => to Make Using The Form Helper Easier
 
     formData = new FormData(
       context: context,
-      emptyFocusNode: emptyFocusNode,
+      emptyFocusNode: new FocusNode(),
       submitForm: submitForm,
       focusNodes: focusNodes,
       focusNodeToError: focusNodeToError,
@@ -315,14 +301,14 @@ class SignUpFromState extends State<SignUpForm> {
   }
 
   String getPasswordValidationError(bool forPassword) {
-    String passwordString = focusNodeToValue[passwordFocusNode].value;
+    String initialPasswordString = focusNodeToValue[passwordFocusNode].value;
     String confirmPasswordString = focusNodeToValue[confirmPasswordFocusNode].value;
 
     ///-----make sure this particular password is valid
     if (forPassword) {
-      if (passwordString.isNotEmpty == false)
+      if (initialPasswordString.isNotEmpty == false)
         return "Password Required";
-      else if (passwordString.length < 6)
+      else if (initialPasswordString.length < 6)
         return "The Password Requires 6 Characters Or More";
     } else {
       if (confirmPasswordString.isNotEmpty == false)
@@ -331,81 +317,40 @@ class SignUpFromState extends State<SignUpForm> {
         return "The Password Requires 6 Characters Or More";
     }
 
-    //Note: we don't check our counter part here because we assume that either
-    //1. It has yet to be filled out
-    //    - so we don't scare our user with red
-    //2. It has been filled out...
-    //  2a. and it has its own individual error
-    //    - where its implicit the passwords don't match because it didn't even pass its individual tests
-    //    - much less match up to us that did pass our individual tests [because otherwise we would have returned by now]
-    //    - consequently, showing individual error reveals more than just saying that the passwords don't match
-    //  2b. and it does not have it own individual error
-    //    - so now it must be checked against us
-
     ///-----make sure both passwords are valid together
-    if (passwordString.isNotEmpty && confirmPasswordString.isNotEmpty) {
-      if (passwordString != confirmPasswordString){
-        //this particular case means that we are valid... but it only says that our counter part is not empty
-        //so this revels 2 cases for our counter part
-        //  1. It doesn't meet all of its individual tests
-        //    - in which case as explained above, the individual error should stay because its more descriptive
-        //  2. It does meet all of its individual tests
-        //    - in which case it might be best to also indicate in its field that the passwords don't match
+    if (initialPasswordString.isNotEmpty && confirmPasswordString.isNotEmpty) {
+      if (initialPasswordString != confirmPasswordString){
         if(forPassword && focusNodeToError[confirmPasswordFocusNode].value == null){
           focusNodeToError[confirmPasswordFocusNode].value = "The Passwords Don't Match";
         }
         else if(focusNodeToError[passwordFocusNode].value == null){
           focusNodeToError[passwordFocusNode].value = "The Passwords Don't Match";
         }
-
         return "The Passwords Don't Match";
       }
       else {
-        //this particular case means that we are valid... and our counter part is valid... and it matches us
-        //however although our error will be cleared out, our counter part might have had an error and it has to be cleared out too
         if(forPassword) focusNodeToError[confirmPasswordFocusNode].value = null;
         else focusNodeToError[passwordFocusNode].value = null;
 
         return null;
       }
     } else {
-      //this particular case means that we are valid... but our counter part is empty
-      //our counter part can be empty for 2 reasons
-      //  1. it was never filled out
-      //    - in which case we don't want to scare our users with red
-      //  2. it was filled out and erased
-      //    - in which case the individual error will already be shown
       return null;
     }
   }
 
-  String getFirstPasswordValidationError() => getPasswordValidationError(true);
-  String getSecondPasswordValidationError() => getPasswordValidationError(false);
+  String getInitialPasswordValidationError() => getPasswordValidationError(true);
+  String getConfirmPasswordValidationError() => getPasswordValidationError(false);
 
   //-------------------------Form Functions-------------------------
 
   submitForm(bool fieldsValidated) async {
     if (fieldsValidated) {
       Scaffold.of(context).showSnackBar(
-            SnackBar(
-                content: new Text("Uncomment FireBase Integration Once Ready")),
-          );
-      /*
-      try {
-        FirebaseUser user =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: focusNodeToValue[emailFocusNode].string,
-          password: focusNodeToValue[passwordFocusNode].string,
-        );
-        Scaffold.of(context).showSnackBar(
-          SnackBar(content: new Text("User ${user.uid} Is Signed In")),
-        );
-      } catch (e) {
-        Scaffold.of(context).showSnackBar(
-          SnackBar(content: new Text("Sign In Error $e")),
-        );
-      }
-      */
+        SnackBar(
+          content: new Text("Add Create User With Email And Password Functionality Here"),
+        ),
+      );
     }
   }
 }
