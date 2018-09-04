@@ -80,8 +80,8 @@ class SignUpFromState extends State<SignUpForm> {
     //-----Form Data and Form Settings => to Make Using The Form Helper Easier
 
     formData = new FormData(
+      formKey: formKey,
       context: context,
-      emptyFocusNode: new FocusNode(),
       submitForm: submitForm,
       focusNodes: focusNodes,
       focusNodeToError: focusNodeToError,
@@ -99,7 +99,6 @@ class SignUpFromState extends State<SignUpForm> {
   @override
   Widget build(BuildContext context) {
     return FormHelper(
-      formKey: formKey,
       formData: formData,
       focusNodeForInitialFocus: emailFocusNode,
       child: new Container(

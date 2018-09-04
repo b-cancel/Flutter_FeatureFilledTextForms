@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 /// Notes:
+///   - this widget also automatically disposes of the focus nodes that you create and pass
 ///   - some features require some specific parameters
 ///     * because there are so many features that you can currently switch on and off, I have not required any parameters for the sake of release and testing (by yall)
 ///     * so you must manually make sure you have all the parameters that you require for the features you desire to use
@@ -23,56 +24,33 @@ import 'package:flutter/services.dart';
 enum FocusType {focusAndOpenKeyboard, focusAndCloseKeyboard, focusAndLeaveKeyboard}
 
 class FormHelper extends StatefulWidget {
-  final GlobalKey<FormState> formKey;
   final FormData formData;
-  final RefocusSettings refocusSettings;
   final Widget child;
-  final bool saveAndValidateFieldOnFieldFocusLoseFocus;
   final FocusNode focusNodeForInitialFocus;
   final FocusType focusTypeForInitialFocus;
   final bool unFocusAllWhenTappingOutside;
 
   FormHelper({
-    this.formKey,
     this.formData,
-    this.refocusSettings,
     this.child,
-    this.saveAndValidateFieldOnFieldFocusLoseFocus: true,
-    this.unFocusAllWhenTappingOutside: true,
     this.focusNodeForInitialFocus,
     this.focusTypeForInitialFocus: FocusType.focusAndLeaveKeyboard,
+    this.unFocusAllWhenTappingOutside: true,
   });
 
   @override
   _FormHelperState createState() => _FormHelperState();
 }
 
-//TODO... save and validate field option...
-
 class _FormHelperState extends State<FormHelper> {
-  List<Function> focusNodeListenerFunctions;
+  FocusNode emptyFocusNode;
 
   @override
   void initState() {
-
-    //generate focusNode listener functions, place them as listeners
-    if(widget.saveAndValidateFieldOnFieldFocusLoseFocus){
-      focusNodeListenerFunctions = new List<Function>();
-      for (int i = 0; i < widget.formData.focusNodes.length; i++) {
-        FocusNode focusNode = widget.formData.focusNodes[i];
-        focusNodeListenerFunctions.add(() {
-          if (focusNode.hasFocus == false) {
-            widget.formKey.currentState.save();
-            validateField(widget.formData, focusNode);
-          }
-        });
-        widget.formData.focusNodes[i].addListener(focusNodeListenerFunctions[i]);
-      }
-    }
-
+    //create the empty focus node if we are going to be using it
+    if(widget.unFocusAllWhenTappingOutside) emptyFocusNode = new FocusNode();
     //autoFocus the first node
     if (widget.focusNodeForInitialFocus != null) initFocus();
-
     super.initState();
   }
 
@@ -84,12 +62,7 @@ class _FormHelperState extends State<FormHelper> {
 
   @override
   void dispose() {
-    for (int i = 0; i < widget.formData.focusNodes.length; i++) {
-      FocusNode focusNode = widget.formData.focusNodes[i];
-      if(widget.saveAndValidateFieldOnFieldFocusLoseFocus) focusNode.removeListener(focusNodeListenerFunctions[i]);
-      widget.formData.focusNodes[i].dispose();
-    }
-    if(widget.unFocusAllWhenTappingOutside) widget.formData.emptyFocusNode.dispose();
+    if(widget.unFocusAllWhenTappingOutside) emptyFocusNode.dispose();
     super.dispose();
   }
 
@@ -98,7 +71,7 @@ class _FormHelperState extends State<FormHelper> {
     return SingleChildScrollView(
       child: GestureDetector(
         onTap: () {
-          if(widget.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(widget.formData.emptyFocusNode);
+          if(widget.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(emptyFocusNode);
         },
         child: widget.child,
       ),
@@ -139,7 +112,6 @@ focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: Focu
 String validateField(FormData formData, FocusNode focusNode){
   //null error is no error (but still must be displayed to make error go away)
   String errorRetrieved = formData.focusNodeToErrorRetrievers[focusNode]();
-  print("validating field");
   formData.focusNodeToError[focusNode].value = errorRetrieved;
   return errorRetrieved;
 }
@@ -246,19 +218,34 @@ class TextFormFieldHelper extends StatefulWidget {
 
 class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver  {
 
-  Function trueWhenTextInField; //required so we can dispose of the listener when its time
+  //required so we can dispose of the listeners when its time
+  Function trueWhenTextInField;
+  Function saveAndValidateWhenLoseFocus;
 
   @override
   void initState(){
     super.initState();
-
+    if(widget.formSettings.saveAndValidateFieldOnFieldFocusLoseFocus){
+      //generate addressable function
+      saveAndValidateWhenLoseFocus = () {
+        if (widget.focusNode.hasFocus == false) {
+          widget.formData.formKey.currentState.save();
+          validateField(widget.formData, widget.focusNode);
+        }
+      };
+      //set function to run when change detected
+      widget.focusNode.addListener(saveAndValidateWhenLoseFocus);
+    }
+    //listeners to ensure visible on field focus and or ensure visible on re open keyboard
     if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
     else{
       if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
+    //listeners to ensure the field is keyboard on keyboard type
     if(widget.formSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
       widget.formData.focusNodeToController[widget.focusNode].addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
+    //listeners to tell the value notifier whether or not there is some text in the field
     if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
       trueWhenTextInField = (){
         if((widget.formData.focusNodeToController[widget.focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[widget.focusNode].value = true;
@@ -270,6 +257,8 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   void dispose(){
+    widget.focusNode.dispose();
+    if(widget.formSettings.saveAndValidateFieldOnFieldFocusLoseFocus) widget.focusNode.removeListener(saveAndValidateWhenLoseFocus);
     if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
     else{
       if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
@@ -443,8 +432,8 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 ///-------------------------Form Helper Classes-------------------------
 
 class FormData{
+  final GlobalKey<FormState> formKey;
   final BuildContext context;
-  final FocusNode emptyFocusNode;
   final Function submitForm;
   final List<FocusNode> focusNodes;
   final Map<FocusNode, ValueNotifier<String>> focusNodeToError;
@@ -454,8 +443,8 @@ class FormData{
   final Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
 
   FormData({
+    this.formKey,
     this.context,
-    this.emptyFocusNode,
     this.submitForm,
     this.focusNodes,
     this.focusNodeToError,
@@ -476,6 +465,7 @@ class FormSettings{
   final bool ensureVisibleOnKeyboardType;
   final bool ensureVisibleOnErrorAppear;
   final ClearFieldBtnAppearOn clearFieldBtnAppearOn;
+  final bool saveAndValidateFieldOnFieldFocusLoseFocus;
 
   FormSettings({
     this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
@@ -486,6 +476,7 @@ class FormSettings{
     this.ensureVisibleOnKeyboardType: true,
     this.ensureVisibleOnErrorAppear: true,
     this.clearFieldBtnAppearOn: ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty,
+    this.saveAndValidateFieldOnFieldFocusLoseFocus: true,
   });
 }
 
