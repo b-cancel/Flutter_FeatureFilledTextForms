@@ -41,6 +41,8 @@ class SignUpFromState extends State<SignUpForm> {
 
   bool showPassword = false;
   bool showConfirmPassword = false;
+  AppearOn clearButtonAppearOn = AppearOn.fieldFocusedAndFieldNotEmpty;
+  AppearOn showHidePasswordButtonAppearOn = AppearOn.fieldNotEmpty;
 
   //-------------------------Overrides-------------------------
 
@@ -175,7 +177,7 @@ class SignUpFromState extends State<SignUpForm> {
                 padding: EdgeInsets.only(right: 16.0),
                 child: new Icon(Icons.mail),
               ),
-              suffixIcon: clearFieldButton(formData, emailFocusNode, clearFieldButtonAppearOn: formSettings.clearFieldBtnAppearOn),
+              suffixIcon: clearFieldButton(doWeAppear(formData, emailFocusNode, appearOn: clearButtonAppearOn), emailFocusNode),
             ),
             keyboardType: TextInputType.emailAddress,
             onSaved: (value) =>
@@ -210,14 +212,14 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  clearFieldButton(formData, passwordFocusNode, clearFieldButtonAppearOn: formSettings.clearFieldBtnAppearOn),
+                  clearFieldButton(doWeAppear(formData, passwordFocusNode, appearOn: clearButtonAppearOn), passwordFocusNode),
                   GestureDetector(
                     onTap: () {
                       setState(() {
                         showPassword = !showPassword;
                       });
                     },
-                    child: passwordShowHideButton(showPassword, iconColor: Theme.of(context).hintColor),
+                    child: passwordShowHideButton(doWeAppear(formData, passwordFocusNode, appearOn: showHidePasswordButtonAppearOn), showPassword, Theme.of(context).hintColor),
                   ),
                 ],
               ),
@@ -254,14 +256,14 @@ class SignUpFromState extends State<SignUpForm> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  clearFieldButton(formData, confirmPasswordFocusNode, clearFieldButtonAppearOn: formSettings.clearFieldBtnAppearOn),
+                  clearFieldButton(doWeAppear(formData, confirmPasswordFocusNode, appearOn: clearButtonAppearOn), confirmPasswordFocusNode),
                   GestureDetector(
                     onTap: () {
                       setState(() {
                         showConfirmPassword = !showConfirmPassword;
                       });
                     },
-                    child: passwordShowHideButton(showConfirmPassword, iconColor: Theme.of(context).hintColor),
+                    child: passwordShowHideButton(doWeAppear(formData, confirmPasswordFocusNode, appearOn: showHidePasswordButtonAppearOn), showConfirmPassword, Theme.of(context).hintColor),
                   ),
                 ],
               ),
@@ -287,6 +289,34 @@ class SignUpFromState extends State<SignUpForm> {
         ),
       child: new Text("SIGN UP"),
     );
+  }
+
+  Widget clearFieldButton(bool doWeAppear, FocusNode focusNode){
+    if(doWeAppear){
+      return new GestureDetector(
+        onTap: () =>  clearField(formData, focusNode),
+        child: new Icon(Icons.close),
+      );
+    }
+    else return new Text("");
+  }
+
+  Widget passwordShowHideButton(bool doWeAppear, bool showIcon, Color iconColor){
+    if(doWeAppear){
+      return new Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: (showIcon)
+            ? new Icon(
+          Icons.lock_open,
+          color: iconColor,
+        )
+            : new Icon(
+          Icons.lock_outline,
+          color: iconColor,
+        ),
+      );
+    }
+    else return new Text("");
   }
 
   //-------------------------Per Field Functions-------------------------

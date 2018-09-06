@@ -319,8 +319,8 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     // because it doesn't make sense to have errors and not let the user know they exist
     // if you don't want the field to be able to register errors then you can simply make the validator for that field always return true
 
-    switch(widget.formSettings.clearFieldBtnAppearOn){
-      case ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty:
+    switch(widget.formSettings.reloadOn){
+      case ReloadOn.fieldFocusChangeOrFieldEmptinessChange:
         return new AnimatedBuilder(
           animation: widget.focusNode,
           builder: (context, child) {
@@ -337,7 +337,7 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
           },
         );
         break;
-      case ClearFieldBtnAppearOn.fieldNotEmpty:
+      case ReloadOn.fieldEmptinessChange:
         return new AnimatedBuilder(
           animation: widget.formData.focusNodeToError[widget.focusNode],
           builder: (context, child) {
@@ -349,7 +349,7 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
           },
         );
         break;
-      case ClearFieldBtnAppearOn.fieldFocused:
+      case ReloadOn.fieldFocusChange:
         return new AnimatedBuilder(
           animation: widget.formData.focusNodeToError[widget.focusNode],
           builder: (context, child) {
@@ -478,9 +478,9 @@ class FormSettings{
   final bool ensureVisibleOnReOpenKeyboard;
   final bool ensureVisibleOnKeyboardType;
   final bool ensureVisibleOnErrorAppear;
-  final ClearFieldBtnAppearOn clearFieldBtnAppearOn;
   final bool saveAndValidateFieldOnLoseFocus;
   final bool unFocusAllWhenTappingOutside;
+  final ReloadOn reloadOn;
 
   FormSettings({
     this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
@@ -490,9 +490,9 @@ class FormSettings{
     this.ensureVisibleOnReOpenKeyboard: true,
     this.ensureVisibleOnKeyboardType: true,
     this.ensureVisibleOnErrorAppear: true,
-    this.clearFieldBtnAppearOn: ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty,
     this.saveAndValidateFieldOnLoseFocus: true,
     this.unFocusAllWhenTappingOutside: true,
+    this.reloadOn: ReloadOn.fieldFocusChangeOrFieldEmptinessChange,
   });
 }
 
@@ -524,47 +524,23 @@ class RefocusSettings{
 
 ///-------------------------Extra Helper Widgets-------------------------
 
-Widget passwordShowHideButton(bool show, {Color iconColor,}){
-  return new Padding(
-    padding: const EdgeInsets.only(left: 8.0),
-    child: (show)
-        ? new Icon(
-      Icons.lock_open,
-      color: iconColor,
-    )
-        : new Icon(
-      Icons.lock_outline,
-      color: iconColor,
-    ),
-  );
-}
+enum ReloadOn {fieldFocusChangeOrFieldEmptinessChange, fieldFocusChange, fieldEmptinessChange, never}
+enum AppearOn {fieldFocusedAndFieldNotEmpty, fieldFocusedOrFieldNotEmpty, fieldFocused, fieldNotEmpty, always}
 
-enum ClearFieldBtnAppearOn {fieldFocused, fieldNotEmpty, fieldFocusedAndFieldNotEmpty, never}
-
-Widget clearFieldButton(FormData formData, FocusNode focusNode, {ClearFieldBtnAppearOn clearFieldButtonAppearOn: ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty}){
-  bool fieldFocused = focusNode.hasFocus;
-  bool fieldNotEmpty = formData.focusNodeToTextInField[focusNode].value;
-  Widget show = new GestureDetector(
-    onTap: () =>  clearField(formData, focusNode),
-    child: new Icon(Icons.close),
-  );
-  Widget hide = new Text("");
-
-  switch(clearFieldButtonAppearOn){
-    case ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty:
-      if(fieldFocused && fieldNotEmpty ) return show;
-      else return hide;
-      break;
-    case ClearFieldBtnAppearOn.fieldFocused:
-      if(fieldFocused) return show;
-      else return hide;
-      break;
-    case ClearFieldBtnAppearOn.fieldNotEmpty:
-      if(fieldNotEmpty) return show;
-      else return hide;
-      break;
-    default:
-      return hide;
-      break;
+bool doWeAppear(FormData formData, FocusNode focusNode, {AppearOn appearOn: AppearOn.fieldFocusedAndFieldNotEmpty}){
+  if(appearOn == AppearOn.always){
+    return true;
+  }
+  else{
+    bool fieldFocused = focusNode.hasFocus;
+    bool fieldNotEmpty = formData.focusNodeToTextInField[focusNode].value;
+    if(appearOn == AppearOn.fieldFocusedAndFieldNotEmpty)
+      return fieldFocused && fieldNotEmpty;
+    else if(appearOn == AppearOn.fieldFocusedOrFieldNotEmpty)
+      return fieldFocused || fieldNotEmpty;
+    else if(appearOn == AppearOn.fieldFocused)
+      return fieldFocused;
+    else
+      return fieldNotEmpty;
   }
 }
