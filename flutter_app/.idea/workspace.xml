@@ -30,8 +30,8 @@
       <file leaf-file-name="signUp.dart" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="231">
-              <caret line="101" column="25" lean-forward="false" selection-start-line="101" selection-start-column="25" selection-end-line="101" selection-end-column="25" />
+            <state relative-caret-position="126">
+              <caret line="96" column="3" lean-forward="true" selection-start-line="96" selection-start-column="3" selection-end-line="96" selection-end-column="3" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -42,8 +42,8 @@
       <file leaf-file-name="FormHelper.dart" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="103">
-              <caret line="254" column="0" lean-forward="true" selection-start-line="254" selection-start-column="0" selection-end-line="254" selection-end-column="0" />
+            <state relative-caret-position="124">
+              <caret line="10" column="92" lean-forward="false" selection-start-line="10" selection-start-column="92" selection-end-line="10" selection-end-column="92" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
               </folding>
@@ -72,7 +72,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>formkey</find>
       <find>getEmail</find>
       <find>errorRetriever</find>
       <find>errorRetrievers</find>
@@ -102,6 +101,7 @@
       <find>refocusSettings</find>
       <find>bindign</find>
       <find>settings</find>
+      <find>binding</find>
     </findStrings>
   </component>
   <component name="GradleLocalSettings">
@@ -596,8 +596,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="231">
-          <caret line="101" column="25" lean-forward="false" selection-start-line="101" selection-start-column="25" selection-end-line="101" selection-end-column="25" />
+        <state relative-caret-position="126">
+          <caret line="96" column="3" lean-forward="true" selection-start-line="96" selection-start-column="3" selection-end-line="96" selection-end-column="3" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>
@@ -606,8 +606,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="103">
-          <caret line="254" column="0" lean-forward="true" selection-start-line="254" selection-start-column="0" selection-end-line="254" selection-end-column="0" />
+        <state relative-caret-position="124">
+          <caret line="10" column="92" lean-forward="false" selection-start-line="10" selection-start-column="92" selection-end-line="10" selection-end-column="92" />
           <folding>
             <element signature="e#0#20#0" expanded="true" />
           </folding>

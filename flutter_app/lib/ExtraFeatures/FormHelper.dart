@@ -25,17 +25,17 @@ enum FocusType {focusAndOpenKeyboard, focusAndCloseKeyboard, focusAndLeaveKeyboa
 
 class FormHelper extends StatefulWidget {
   final FormData formData;
+  final FormSettings formSettings;
   final Widget child;
   final FocusNode focusNodeForInitialFocus;
   final FocusType focusTypeForInitialFocus;
-  final bool unFocusAllWhenTappingOutside;
 
   FormHelper({
     this.formData,
+    this.formSettings,
     this.child,
     this.focusNodeForInitialFocus,
     this.focusTypeForInitialFocus: FocusType.focusAndLeaveKeyboard,
-    this.unFocusAllWhenTappingOutside: true,
   });
 
   @override
@@ -43,15 +43,45 @@ class FormHelper extends StatefulWidget {
 }
 
 class _FormHelperState extends State<FormHelper> {
+  //required so we can dispose when its time
   FocusNode emptyFocusNode;
+  List<Function> saveAndValidateWhenLoseFocus;
+  List<Function> trueWhenTextInField;
 
   @override
   void initState() {
+    //init parent before child
+    super.initState();
+    //save and validate field when it losses focus setup
+    if(widget.formSettings.saveAndValidateFieldOnLoseFocus){
+      saveAndValidateWhenLoseFocus = new List<Function>();
+      for (int i = 0; i < widget.formData.focusNodes.length; i++) {
+        FocusNode focusNode = widget.formData.focusNodes[i];
+        saveAndValidateWhenLoseFocus.add(() {
+          if (focusNode.hasFocus == false) {
+            widget.formData.formKey.currentState.save();
+            validateField(widget.formData, focusNode);
+          }
+        });
+        widget.formData.focusNodes[i].addListener(saveAndValidateWhenLoseFocus[i]);
+      }
+    }
+    //focusNode controller check if text exists in field setup
+    if(widget.formData.focusNodeToTextInField != null && widget.formData.focusNodeToController != null){
+      trueWhenTextInField = new List<Function>();
+      for(int i=0; i<widget.formData.focusNodes.length; i++){
+        FocusNode focusNode = widget.formData.focusNodes[i];
+        trueWhenTextInField.add((){
+          if((widget.formData.focusNodeToController[focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[focusNode].value = true;
+          else widget.formData.focusNodeToTextInField[focusNode].value = false;
+        });
+        widget.formData.focusNodeToController[focusNode].addListener(trueWhenTextInField[i]);
+      }
+    }
     //create the empty focus node if we are going to be using it
-    if(widget.unFocusAllWhenTappingOutside) emptyFocusNode = new FocusNode();
+    if(widget.formSettings.unFocusAllWhenTappingOutside) emptyFocusNode = new FocusNode();
     //autoFocus the first node
     if (widget.focusNodeForInitialFocus != null) initFocus();
-    super.initState();
   }
 
   //the standard "TextFormField" "autoFocus" property doesn't automatically scroll. So we use this instead.
@@ -62,7 +92,24 @@ class _FormHelperState extends State<FormHelper> {
 
   @override
   void dispose() {
-    if(widget.unFocusAllWhenTappingOutside) emptyFocusNode.dispose();
+    //save and validate field when it losses focus dispose
+    if(widget.formSettings.saveAndValidateFieldOnLoseFocus){
+      for(int i =0; i<widget.formData.focusNodes.length; i++){
+        widget.formData.focusNodes[i].removeListener(saveAndValidateWhenLoseFocus[i]);
+      }
+    }
+    //focusNode controller check if text exists in field dispose
+    if(widget.formData.focusNodeToTextInField != null && widget.formData.focusNodeToController != null){
+      for(int i=0; i<widget.formData.focusNodes.length; i++){
+        widget.formData.focusNodeToController[widget.formData.focusNodes[i]].removeListener(trueWhenTextInField[i]);
+      }
+    }
+    //dispose of all focus nodes
+    for(var focusNode in widget.formData.focusNodes){
+      focusNode.dispose();
+    }
+    if(widget.formSettings.unFocusAllWhenTappingOutside) emptyFocusNode.dispose();
+    //dispose parent after child
     super.dispose();
   }
 
@@ -71,7 +118,7 @@ class _FormHelperState extends State<FormHelper> {
     return SingleChildScrollView(
       child: GestureDetector(
         onTap: () {
-          if(widget.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(emptyFocusNode);
+          if(widget.formSettings.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(emptyFocusNode);
         },
         child: widget.child,
       ),
@@ -87,15 +134,14 @@ defaultSubmitField(FormData formData, FocusNode focusNode, String newValue, bool
   if(refocusAfter) refocus(formData, new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(focusNode)));
 }
 
-clearField(FormData formData, FocusNode focusNode){
+clearField(FormData formData, FocusNode focusNode, {bool validateFieldIfNotFocused: true}){
   saveField(formData.focusNodeToValue[focusNode], "");
   formData.focusNodeToController[focusNode].clear();
   formData.focusNodeToValue[focusNode].value = "";
   //if we clear the field when we are not focused on it
   //it makes sense that we validate the field because the user filled it out at one point
   //and if it has some requirements we want to make those are visible before the user tries to submit the form
-  //TODO... add this as an option, perhaps a named variable with a default
-  if(focusNode.hasFocus == false)
+  if(validateFieldIfNotFocused && focusNode.hasFocus == false)
     validateField(formData, focusNode);
 }
 
@@ -216,56 +262,17 @@ class TextFormFieldHelper extends StatefulWidget {
   _TextFormFieldHelperState createState() => new _TextFormFieldHelperState();
 }
 
-class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver  {
-
-  //required so we can dispose of the listeners when its time
-  Function trueWhenTextInField;
-  Function saveAndValidateWhenLoseFocus;
+class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsBindingObserver {
 
   @override
   void initState(){
+    //init parent before child
     super.initState();
-    if(widget.formSettings.saveAndValidateFieldOnFieldFocusLoseFocus){
-      //generate addressable function
-      saveAndValidateWhenLoseFocus = () {
-        if (widget.focusNode.hasFocus == false) {
-          widget.formData.formKey.currentState.save();
-          validateField(widget.formData, widget.focusNode);
-        }
-      };
-      //set function to run when change detected
-      widget.focusNode.addListener(saveAndValidateWhenLoseFocus);
-    }
-    //listeners to ensure visible on field focus and or ensure visible on re open keyboard
     if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.addObserver(this);
     if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.addListener(waitForKeyboardToOpenAndEnsureVisible);
-    //listeners to ensure the field is keyboard on keyboard type
     if(widget.formSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null){
       widget.formData.focusNodeToController[widget.focusNode].addListener(waitForKeyboardToOpenAndEnsureVisible);
     }
-    //listeners to tell the value notifier whether or not there is some text in the field
-    if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
-      trueWhenTextInField = (){
-        if((widget.formData.focusNodeToController[widget.focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[widget.focusNode].value = true;
-        else widget.formData.focusNodeToTextInField[widget.focusNode].value = false;
-      };
-      widget.formData.focusNodeToController[widget.focusNode].addListener(trueWhenTextInField);
-    }
-  }
-
-  @override
-  void dispose(){
-    widget.focusNode.dispose();
-    if(widget.formSettings.saveAndValidateFieldOnFieldFocusLoseFocus) widget.focusNode.removeListener(saveAndValidateWhenLoseFocus);
-    if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
-    if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
-    if(widget.formSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
-      widget.formData.focusNodeToController[widget.focusNode].removeListener(waitForKeyboardToOpenAndEnsureVisible);
-    }
-    if(widget.formData.focusNodeToTextInField[widget.focusNode] != null && widget.formData.focusNodeToController[widget.focusNode] != null){
-      widget.formData.focusNodeToController[widget.focusNode].removeListener(trueWhenTextInField);
-    }
-    super.dispose();
   }
 
   @override
@@ -389,6 +396,17 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     }
   }
 
+  @override
+  void dispose(){
+    if(widget.formSettings.ensureVisibleOnReOpenKeyboard) WidgetsBinding.instance.removeObserver(this);
+    if(widget.formSettings.ensureVisibleOnFieldFocus) widget.focusNode.removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    if(widget.formSettings.ensureVisibleOnKeyboardType && widget.formData.focusNodeToController[widget.focusNode] != null) {
+      widget.formData.focusNodeToController[widget.focusNode].removeListener(waitForKeyboardToOpenAndEnsureVisible);
+    }
+    //dispose child after parent
+    super.dispose();
+  }
+
   ensureVisible(BuildContext context, FocusNode focusNode, {Duration duration: const Duration(milliseconds: 100), Curve curve: Curves.ease}) async{
     // No need to go any further if the node has not the focus
     if (focusNode.hasFocus){
@@ -461,7 +479,8 @@ class FormSettings{
   final bool ensureVisibleOnKeyboardType;
   final bool ensureVisibleOnErrorAppear;
   final ClearFieldBtnAppearOn clearFieldBtnAppearOn;
-  final bool saveAndValidateFieldOnFieldFocusLoseFocus;
+  final bool saveAndValidateFieldOnLoseFocus;
+  final bool unFocusAllWhenTappingOutside;
 
   FormSettings({
     this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
@@ -472,7 +491,8 @@ class FormSettings{
     this.ensureVisibleOnKeyboardType: true,
     this.ensureVisibleOnErrorAppear: true,
     this.clearFieldBtnAppearOn: ClearFieldBtnAppearOn.fieldFocusedAndFieldNotEmpty,
-    this.saveAndValidateFieldOnFieldFocusLoseFocus: true,
+    this.saveAndValidateFieldOnLoseFocus: true,
+    this.unFocusAllWhenTappingOutside: true,
   });
 }
 
