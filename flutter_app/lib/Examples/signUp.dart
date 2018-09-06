@@ -100,7 +100,7 @@ class SignUpFromState extends State<SignUpForm> {
   Widget build(BuildContext context) {
     return FormHelper(
       formData: formData,
-      focusNodeForInitialFocus: emailFocusNode,
+      focusNodeForInitialFocus: confirmPasswordFocusNode,
       child: new Container(
         padding: EdgeInsets.all(16.0),
         child: new Column(
