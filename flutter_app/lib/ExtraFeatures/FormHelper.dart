@@ -13,122 +13,25 @@ import 'package:flutter/services.dart';
 ///   - some functions are async (and/or/xor) wait Duration.zero so that things can be scheduled properly
 ///     * "initFocus" needs this so that after build from your form runs and everything in the FormHelper is setup, then you are able to do a scrolling focus on your desired node
 ///     * "ensureVisible" only needs to be async so that when its called INIT or ON ERROR DETECTED it waits for build to run or for the error to show and then it ensures visible
+///     * "focusField"  needs it so refocusing works properly
 ///   - Animated Builders only rebuild if the value changes, if it was set to the exact same value it had before it is not considered a change
 ///     * this simplifies the code a bit
 ///   - the context parameter from "ensureVisible" must be have a "SingleChildScrollView" above it
 ///     * this is because that means "RenderAbstractViewport.of(object)" will have [RenderAbstractViewport] as an ancestor
 ///     * which means that ensureVisible will work
 
-///-------------------------Form Helper Widget-------------------------
+///-------------------------Enums-------------------------
 
 enum FocusType {focusAndOpenKeyboard, focusAndCloseKeyboard, focusAndLeaveKeyboard}
+enum ValidationScheme {validateAllThenRefocus, validateUntilRefocus}
+enum ValidationType {check, checkAndShow}
+enum SearchDirection {topToBottom, bottomToTop}
+enum ReloadOn {fieldFocusChangeOrFieldEmptinessChange, fieldFocusChange, fieldEmptinessChange, never}
+enum AppearOn {fieldFocusedAndFieldNotEmpty, fieldFocusedOrFieldNotEmpty, fieldFocused, fieldNotEmpty, always}
 
-class FormHelper extends StatefulWidget {
-  final FormData formData;
-  final FormSettings formSettings;
-  final Widget child;
-  final FocusNode focusNodeForInitialFocus;
-  final FocusType focusTypeForInitialFocus;
+///-------------------------Functions-------------------------
 
-  FormHelper({
-    this.formData,
-    this.formSettings,
-    this.child,
-    this.focusNodeForInitialFocus,
-    this.focusTypeForInitialFocus: FocusType.focusAndLeaveKeyboard,
-  });
-
-  @override
-  _FormHelperState createState() => _FormHelperState();
-}
-
-class _FormHelperState extends State<FormHelper> {
-  //required so we can dispose when its time
-  FocusNode emptyFocusNode;
-  List<Function> saveAndValidateWhenLoseFocus;
-  List<Function> trueWhenTextInField;
-
-  @override
-  void initState() {
-    //init parent before child
-    super.initState();
-    //save and validate field when it losses focus setup
-    if(widget.formSettings.saveAndValidateFieldOnLoseFocus){
-      saveAndValidateWhenLoseFocus = new List<Function>();
-      for (int i = 0; i < widget.formData.focusNodes.length; i++) {
-        FocusNode focusNode = widget.formData.focusNodes[i];
-        saveAndValidateWhenLoseFocus.add(() {
-          if (focusNode.hasFocus == false) {
-            widget.formData.formKey.currentState.save();
-            validateField(widget.formData, focusNode);
-          }
-        });
-        widget.formData.focusNodes[i].addListener(saveAndValidateWhenLoseFocus[i]);
-      }
-    }
-    //focusNode controller check if text exists in field setup
-    if(widget.formData.focusNodeToTextInField != null && widget.formData.focusNodeToController != null){
-      trueWhenTextInField = new List<Function>();
-      for(int i=0; i<widget.formData.focusNodes.length; i++){
-        FocusNode focusNode = widget.formData.focusNodes[i];
-        trueWhenTextInField.add((){
-          if((widget.formData.focusNodeToController[focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[focusNode].value = true;
-          else widget.formData.focusNodeToTextInField[focusNode].value = false;
-        });
-        widget.formData.focusNodeToController[focusNode].addListener(trueWhenTextInField[i]);
-      }
-    }
-    //create the empty focus node if we are going to be using it
-    if(widget.formSettings.unFocusAllWhenTappingOutside) emptyFocusNode = new FocusNode();
-    //autoFocus the first node
-    if (widget.focusNodeForInitialFocus != null) initFocus();
-  }
-
-  //the standard "TextFormField" "autoFocus" property doesn't automatically scroll. So we use this instead.
-  initFocus() async {
-    await Future.delayed(Duration.zero);
-    focusField(widget.formData.context, widget.focusNodeForInitialFocus, focusType: widget.focusTypeForInitialFocus);
-  }
-
-  @override
-  void dispose() {
-    //save and validate field when it losses focus dispose
-    if(widget.formSettings.saveAndValidateFieldOnLoseFocus){
-      for(int i =0; i<widget.formData.focusNodes.length; i++){
-        widget.formData.focusNodes[i].removeListener(saveAndValidateWhenLoseFocus[i]);
-      }
-    }
-    //focusNode controller check if text exists in field dispose
-    if(widget.formData.focusNodeToTextInField != null && widget.formData.focusNodeToController != null){
-      for(int i=0; i<widget.formData.focusNodes.length; i++){
-        widget.formData.focusNodeToController[widget.formData.focusNodes[i]].removeListener(trueWhenTextInField[i]);
-      }
-    }
-    //dispose of all focus nodes
-    for(var focusNode in widget.formData.focusNodes){
-      focusNode.dispose();
-    }
-    if(widget.formSettings.unFocusAllWhenTappingOutside) emptyFocusNode.dispose();
-    //dispose parent after child
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: GestureDetector(
-        onTap: () {
-          if(widget.formSettings.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(emptyFocusNode);
-        },
-        child: widget.child,
-      ),
-    );
-  }
-}
-
-///-------------------------Form Helper Functions-------------------------
-
-///NOTE: this is only how most people would want to submit their field, you might want different refocus settings per submission
+///NOTE: this is only how most people would want to submit their field, BUT you might want different refocus settings per submission
 defaultSubmitField(FormData formData, FocusNode focusNode, String newValue, bool refocusAfter){
   saveField(formData.focusNodeToValue[focusNode], newValue);
   if(refocusAfter) refocus(formData, new RefocusSettings(firstTargetIndex: formData.focusNodes.indexOf(focusNode)));
@@ -147,7 +50,7 @@ clearField(FormData formData, FocusNode focusNode, {bool validateFieldIfNotFocus
 
 saveField(ValueNotifier<String> value, String newValue) => value.value = newValue;
 
-focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) {
+focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: FocusType.focusAndOpenKeyboard}) async {
   FocusScope.of(context).requestFocus(focusNode);
   if(focusType != FocusType.focusAndLeaveKeyboard){
     if(focusType == FocusType.focusAndOpenKeyboard) SystemChannels.textInput.invokeMethod('TextInput.show');
@@ -230,6 +133,24 @@ refocus(FormData formData, RefocusSettings refocusSettings){
   }
 }
 
+bool doWeAppear(FormData formData, FocusNode focusNode, {AppearOn appearOn: AppearOn.fieldFocusedAndFieldNotEmpty}){
+  if(appearOn == AppearOn.always){
+    return true;
+  }
+  else{
+    bool fieldFocused = focusNode.hasFocus;
+    bool fieldNotEmpty = formData.focusNodeToTextInField[focusNode].value;
+    if(appearOn == AppearOn.fieldFocusedAndFieldNotEmpty)
+      return fieldFocused && fieldNotEmpty;
+    else if(appearOn == AppearOn.fieldFocusedOrFieldNotEmpty)
+      return fieldFocused || fieldNotEmpty;
+    else if(appearOn == AppearOn.fieldFocused)
+      return fieldFocused;
+    else
+      return fieldNotEmpty;
+  }
+}
+
 int _getIndexAfter(int currIndex, int maxIndex){
   currIndex++;
   return (currIndex > maxIndex) ? 0 : currIndex;
@@ -240,7 +161,210 @@ int _getIndexBefore(int currIndex, int maxIndex){
   return (currIndex < 0) ? maxIndex : currIndex;
 }
 
-///-------------------------Text Form Field Helper Widget-------------------------
+///-------------------------Structure Classes-------------------------
+
+class FormData{
+  final GlobalKey<FormState> formKey;
+  final BuildContext context;
+  final Function submitForm;
+  final List<FocusNode> focusNodes;
+  final Map<FocusNode, ValueNotifier<String>> focusNodeToError;
+  final Map<FocusNode, Function> focusNodeToErrorRetrievers;
+  final Map<FocusNode, TextEditingController> focusNodeToController;
+  final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
+  final Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
+
+  FormData({
+    this.formKey,
+    this.context,
+    this.submitForm,
+    this.focusNodes,
+    this.focusNodeToError,
+    this.focusNodeToErrorRetrievers,
+    this.focusNodeToController,
+    this.focusNodeToValue,
+    this.focusNodeToTextInField,
+  });
+}
+
+class FormSettings{
+
+  final Duration keyboardWait;
+  final Duration scrollDuration;
+  final Curve scrollCurve;
+  final bool ensureVisibleOnFieldFocus;
+  final bool ensureVisibleOnReOpenKeyboard;
+  final bool ensureVisibleOnKeyboardType;
+  final bool ensureVisibleOnErrorAppear;
+  final bool saveAndValidateFieldOnLoseFocus;
+  final bool unFocusAllWhenTappingOutside;
+  final bool keepTrackOfWhenFieldsBecomeEmpty;
+  final bool reloadOnFieldEmptinessChange;
+  final bool reloadOnFieldFocusChange;
+  final bool reloadOnFieldContentChange;
+  final bool autoSaveFieldValue;
+
+  FormSettings({
+    this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
+    this.scrollDuration: const Duration(milliseconds: 100),
+    this.scrollCurve: Curves.ease,
+    this.ensureVisibleOnFieldFocus: true,
+    this.ensureVisibleOnReOpenKeyboard: true,
+    this.ensureVisibleOnKeyboardType: true,
+    this.ensureVisibleOnErrorAppear: true,
+    this.saveAndValidateFieldOnLoseFocus: true,
+    this.unFocusAllWhenTappingOutside: true,
+    this.keepTrackOfWhenFieldsBecomeEmpty: true,
+    this.reloadOnFieldEmptinessChange: true,
+    this.reloadOnFieldFocusChange: true,
+    this.reloadOnFieldContentChange: true,
+    this.autoSaveFieldValue: true,
+  });
+}
+
+class RefocusSettings{
+  final ValidationScheme validationScheme;
+  final ValidationType validationType;
+  final int firstTargetIndex;
+  final SearchDirection searchDirection;
+  final bool loopSearch;
+  final bool skipTargetIfValidates;
+  final FocusType focusType;
+  final bool submitFormIfAllValid;
+
+  RefocusSettings({
+    this.validationScheme: ValidationScheme.validateUntilRefocus,
+    this.validationType: ValidationType.checkAndShow,
+    this.firstTargetIndex: 0,
+    this.searchDirection: SearchDirection.topToBottom,
+    this.loopSearch: true,
+    this.skipTargetIfValidates: true,
+    this.focusType: FocusType.focusAndOpenKeyboard,
+    this.submitFormIfAllValid: true,
+  });
+}
+
+///-------------------------Widgets-------------------------
+
+///-------------------------Form Helper
+
+class FormHelper extends StatefulWidget {
+  final FormData formData;
+  final FormSettings formSettings;
+  final Widget child;
+  final FocusNode focusNodeForInitialFocus;
+  final FocusType focusTypeForInitialFocus;
+
+  FormHelper({
+    this.formData,
+    this.formSettings,
+    this.child,
+    this.focusNodeForInitialFocus,
+    this.focusTypeForInitialFocus: FocusType.focusAndLeaveKeyboard,
+  });
+
+  @override
+  _FormHelperState createState() => _FormHelperState();
+}
+
+class _FormHelperState extends State<FormHelper> {
+  //required so we can dispose when its time
+  FocusNode emptyFocusNode;
+  List<Function> saveAndValidateWhenLoseFocus;
+  List<Function> controllerListenerFunctions;
+
+  @override
+  void initState() {
+    //init parent before child
+    super.initState();
+    //save and validate field when it losses focus setup
+    if(widget.formSettings.saveAndValidateFieldOnLoseFocus){
+      saveAndValidateWhenLoseFocus = new List<Function>();
+      for (int i = 0; i < widget.formData.focusNodes.length; i++) {
+        FocusNode focusNode = widget.formData.focusNodes[i];
+        saveAndValidateWhenLoseFocus.add(() {
+          if (focusNode.hasFocus == false) {
+            widget.formData.formKey.currentState.save();
+            validateField(widget.formData, focusNode);
+          }
+        });
+        widget.formData.focusNodes[i].addListener(saveAndValidateWhenLoseFocus[i]);
+      }
+    }
+    //focusNode controller check if text exists in field setup
+    if(widget.formData.focusNodeToController != null && (widget.formSettings.keepTrackOfWhenFieldsBecomeEmpty || widget.formSettings.autoSaveFieldValue)){
+      controllerListenerFunctions = new List<Function>();
+      for(int i=0; i<widget.formData.focusNodes.length; i++){
+        FocusNode focusNode = widget.formData.focusNodes[i];
+        controllerListenerFunctions.add((){
+          if(widget.formSettings.autoSaveFieldValue){
+            String prevValue = widget.formData.focusNodeToValue[focusNode].value;
+            String currValue = widget.formData.focusNodeToController[focusNode].text;
+            if(prevValue != currValue){
+              ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the helper yourself
+              //Note: Requires that "widget.formSettings.reloadOnFieldContentChange == true" to update whatever is being changed here
+              print("---wipe the error");
+              print("---Set our helper or counter text");
+            }
+            widget.formData.focusNodeToValue[focusNode].value = widget.formData.focusNodeToController[focusNode].text;
+          }
+          if(widget.formSettings.keepTrackOfWhenFieldsBecomeEmpty && widget.formData.focusNodeToTextInField != null){
+            if((widget.formData.focusNodeToController[focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[focusNode].value = true;
+            else widget.formData.focusNodeToTextInField[focusNode].value = false;
+          }
+        });
+        widget.formData.focusNodeToController[focusNode].addListener(controllerListenerFunctions[i]);
+      }
+    }
+    //create the empty focus node if we are going to be using it
+    if(widget.formSettings.unFocusAllWhenTappingOutside) emptyFocusNode = new FocusNode();
+    //autoFocus the first node
+    if (widget.focusNodeForInitialFocus != null) initFocus();
+  }
+
+  //the standard "TextFormField" "autoFocus" property doesn't automatically scroll. So we use this instead.
+  initFocus() async {
+    await Future.delayed(Duration.zero);
+    focusField(widget.formData.context, widget.focusNodeForInitialFocus, focusType: widget.focusTypeForInitialFocus);
+  }
+
+  @override
+  void dispose() {
+    //save and validate field when it losses focus dispose
+    if(widget.formSettings.saveAndValidateFieldOnLoseFocus){
+      for(int i =0; i<widget.formData.focusNodes.length; i++){
+        widget.formData.focusNodes[i].removeListener(saveAndValidateWhenLoseFocus[i]);
+      }
+    }
+    //focusNode controller check if text exists in field dispose
+    if(widget.formData.focusNodeToTextInField != null && widget.formData.focusNodeToController != null){
+      for(int i=0; i<widget.formData.focusNodes.length; i++){
+        widget.formData.focusNodeToController[widget.formData.focusNodes[i]].removeListener(controllerListenerFunctions[i]);
+      }
+    }
+    //dispose of all focus nodes
+    for(var focusNode in widget.formData.focusNodes){
+      focusNode.dispose();
+    }
+    if(widget.formSettings.unFocusAllWhenTappingOutside) emptyFocusNode.dispose();
+    //dispose parent after child
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: GestureDetector(
+        onTap: () {
+          if(widget.formSettings.unFocusAllWhenTappingOutside) FocusScope.of(context).requestFocus(emptyFocusNode);
+        },
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+///-------------------------Text Form Field Helper
 
 class TextFormFieldHelper extends StatefulWidget {
 
@@ -300,99 +424,177 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
-    //Note: The Order of the Animated Builders is very specific
-    //Ideally in the outside we would have the animated builders that reload the least, and in the inside we would have the animated builders that reload the most
-    //this would be to increase performance as much as possible so we reload the least amount of widgets per reload
-    //  - focusNode changes the least because it only occurs when we un focus or focus on a field
-    //  - focusNodeToTextInField has the chance of changing multiple times while the text field is focused
-    //    * but it only changes when the text field goes from having some to no text, or no text to some text
-    //    * this event generally doesn't happen all that often because it implies the user wiped all the text from the field
-    //  - focusNodeToError changes the most because the user might adjust their input multiple times until they meet the requirements and are no longer generating an error on submission of that field
-    //However, in order for ensureVisibleOnErrorAppear to work ensureVisible needs to run when the animated builder tied to widget.formData.focusNodeToError[widget.focusNode] rebuilds
-    // since we pass a builder into this function, in order for this to always be possible we need to nest the focusNodeToTextInField Animated Builder into the focusNodeToError Animated Builder
-    // although this solution is indeed suboptimal
 
-    //Developer Note: For some reason IF I construct the widget piece by piece depending on the conditionals it doesn't function as expected
-    // which is why im returning the entire widget depending on the conditionals and therefor repeat a lot of code
+    //For Optimal Performance we want to the animated builders that update the least amount of times closer to the outside,
+    // and those that update the most closer to the inside
+    //LEAST TO MOST UPDATES
+    //focusNode, (focusNodeToTextInField[widget.focusNode] OR focusNodeToError[widget.focusNode]), focusNodeToController[widget.focusNode]
+
+    //Developer Note: We could construct the widget and save ourselves some lines of code but it makes everything harder to understand
 
     //Note: we automatically assume that you want to rebuild your widget when an error appears because not doing so never makes sense
     // because it doesn't make sense to have errors and not let the user know they exist
     // if you don't want the field to be able to register errors then you can simply make the validator for that field always return true
 
-    switch(widget.formSettings.reloadOn){
-      case ReloadOn.fieldFocusChangeOrFieldEmptinessChange:
-        return new AnimatedBuilder(
-          animation: widget.focusNode,
-          builder: (context, child) {
-            return new AnimatedBuilder(
-              animation: widget.formData.focusNodeToError[widget.focusNode],
-              builder: (context, child) {
-                if(widget.formSettings.ensureVisibleOnErrorAppear) ensureVisible(context, widget.focusNode);
-                return new AnimatedBuilder(
-                  animation: widget.formData.focusNodeToTextInField[widget.focusNode],
-                  builder: widget.builder,
-                );
-              },
-            );
-          },
-        );
-        break;
-      case ReloadOn.fieldEmptinessChange:
-        return new AnimatedBuilder(
-          animation: widget.formData.focusNodeToError[widget.focusNode],
-          builder: (context, child) {
-            if(widget.formSettings.ensureVisibleOnErrorAppear) ensureVisible(context, widget.focusNode);
-            return new AnimatedBuilder(
-              animation: widget.formData.focusNodeToTextInField[widget.focusNode],
-              builder: widget.builder,
-            );
-          },
-        );
-        break;
-      case ReloadOn.fieldFocusChange:
-        return new AnimatedBuilder(
-          animation: widget.formData.focusNodeToError[widget.focusNode],
-          builder: (context, child) {
-            if(widget.formSettings.ensureVisibleOnErrorAppear) ensureVisible(context, widget.focusNode);
-            return new AnimatedBuilder(
-              animation: widget.focusNode,
-              builder: widget.builder,
-            );
-          },
-        );
-        break;
-      default:
-        if(widget.formSettings.ensureVisibleOnErrorAppear){
-          //Note: this is a bit of a waste because two animated builders are rebuilding triggered by the exact SAME animation
-          // but it simplifies the code for the user by not making them call ensureVisible manually
-          //  Alternatively they could could call "ensureVisible(context, theFocusNodeNameHere)" in the builder they pass to this widget instead and set "alternatively" below to true
-          bool alternatively = false;
-          if(alternatively){
-            return new AnimatedBuilder(
-              animation: widget.formData.focusNodeToError[widget.focusNode],
-              builder: widget.builder,
-            );
-          }
-          else{
-            return new AnimatedBuilder(
+    bool onFocusChange = widget.formSettings.reloadOnFieldFocusChange;
+    bool onEmptinessChange = widget.formSettings.reloadOnFieldEmptinessChange;
+    //onErrorDetected
+    bool onContentChange = widget.formSettings.reloadOnFieldContentChange;
+
+    if(onFocusChange && onEmptinessChange && onContentChange){ //---4 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.focusNode,
+        builder: (context, child) {
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToTextInField[widget.focusNode],
+            builder: (context, child) {
+              return new AnimatedBuilder(
                 animation: widget.formData.focusNodeToError[widget.focusNode],
                 builder: (context, child){
-                  ensureVisible(context, widget.focusNode); //we already know we want this
+                  if(widget.formSettings.ensureVisibleOnErrorAppear){
+                    ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
+                  }
                   return new AnimatedBuilder(
-                    animation: widget.formData.focusNodeToError[widget.focusNode],
+                    animation: widget.formData.focusNodeToController[widget.focusNode],
                     builder: widget.builder,
                   );
-                }
-            );
+                },
+              );
+            },
+          );
+        },
+      );
+    }
+    else if(onFocusChange == false && onEmptinessChange == true && onContentChange == true ){ //---3 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.formData.focusNodeToTextInField[widget.focusNode],
+        builder: (context, child) {
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToError[widget.focusNode],
+            builder: (context, child){
+              if(widget.formSettings.ensureVisibleOnErrorAppear){
+                ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
+              }
+              return new AnimatedBuilder(
+                animation: widget.formData.focusNodeToController[widget.focusNode],
+                builder: widget.builder,
+              );
+            },
+          );
+        },
+      );
+    }
+    else if(onFocusChange == true && onEmptinessChange == false && onContentChange == true ){ //---3 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.focusNode,
+        builder: (context, child) {
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToError[widget.focusNode],
+            builder: (context, child){
+              if(widget.formSettings.ensureVisibleOnErrorAppear){
+                ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
+              }
+              return new AnimatedBuilder(
+                animation: widget.formData.focusNodeToController[widget.focusNode],
+                builder: widget.builder,
+              );
+            },
+          );
+        },
+      );
+    }
+    else if(onFocusChange == false && onEmptinessChange == false && onContentChange == true ){ //---2 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.formData.focusNodeToError[widget.focusNode],
+        builder: (context, child){
+          if(widget.formSettings.ensureVisibleOnErrorAppear){
+            ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
           }
-        }
-        else{
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToController[widget.focusNode],
+            builder: widget.builder,
+          );
+        },
+      );
+    }
+    else if(onFocusChange == true && onEmptinessChange == true && onContentChange == false ){ //---3 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.focusNode,
+        builder: (context, child) {
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToError[widget.focusNode],
+            builder: (context, child){
+              if(widget.formSettings.ensureVisibleOnErrorAppear){
+                ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
+              }
+              return new AnimatedBuilder(
+                animation: widget.formData.focusNodeToTextInField[widget.focusNode], //out of order so we can call ensure visible
+                builder: widget.builder,
+              );
+            },
+          );
+        },
+      );
+    }
+    else if(onFocusChange == false && onEmptinessChange == true && onContentChange == false ){ //---2 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.formData.focusNodeToError[widget.focusNode],
+        builder: (context, child){
+          if(widget.formSettings.ensureVisibleOnErrorAppear){
+            ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
+          }
+          return new AnimatedBuilder(
+            animation: widget.formData.focusNodeToTextInField[widget.focusNode], //out of order so we can call ensure visible
+            builder: widget.builder,
+          );
+        },
+      );
+    }
+    else if(onFocusChange == true && onEmptinessChange == false && onContentChange == false ){ //---2 Animated Builders
+      return new AnimatedBuilder(
+        animation: widget.formData.focusNodeToError[widget.focusNode],
+        builder: (context, child){
+          if(widget.formSettings.ensureVisibleOnErrorAppear){
+            ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
+          }
+          return new AnimatedBuilder(
+            animation: widget.focusNode,
+            builder: widget.builder,
+          );
+        },
+      );
+    }
+    else{
+      if(widget.formSettings.ensureVisibleOnErrorAppear){
+        //Note: this is a bit of a waste because two animated builders are rebuilding triggered by the exact SAME animation
+        // but it simplifies the code for the user by not making them call ensureVisible manually
+        //  Alternatively they could could call "ensureVisible(context, theFocusNodeNameHere)" in the builder they pass to this widget instead and set "alternatively" below to true
+        bool alternatively = false;
+        if(alternatively){
           return new AnimatedBuilder(
             animation: widget.formData.focusNodeToError[widget.focusNode],
             builder: widget.builder,
           );
         }
-        break;
+        else{
+          return new AnimatedBuilder(
+              animation: widget.formData.focusNodeToError[widget.focusNode],
+              builder: (context, child){
+                ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve); //we already know we want this
+                return new AnimatedBuilder(
+                  animation: widget.formData.focusNodeToError[widget.focusNode],
+                  builder: widget.builder,
+                );
+              }
+          );
+        }
+      }
+      else{
+        return new AnimatedBuilder(
+          animation: widget.formData.focusNodeToError[widget.focusNode],
+          builder: widget.builder,
+        );
+      }
     }
   }
 
@@ -440,107 +642,5 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
         );
       }
     }
-  }
-}
-
-///-------------------------Form Helper Classes-------------------------
-
-class FormData{
-  final GlobalKey<FormState> formKey;
-  final BuildContext context;
-  final Function submitForm;
-  final List<FocusNode> focusNodes;
-  final Map<FocusNode, ValueNotifier<String>> focusNodeToError;
-  final Map<FocusNode, Function> focusNodeToErrorRetrievers;
-  final Map<FocusNode, TextEditingController> focusNodeToController;
-  final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
-  final Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
-
-  FormData({
-    this.formKey,
-    this.context,
-    this.submitForm,
-    this.focusNodes,
-    this.focusNodeToError,
-    this.focusNodeToErrorRetrievers,
-    this.focusNodeToController,
-    this.focusNodeToValue,
-    this.focusNodeToTextInField,
-  });
-}
-
-class FormSettings{
-
-  final Duration keyboardWait;
-  final Duration scrollDuration;
-  final Curve scrollCurve;
-  final bool ensureVisibleOnFieldFocus;
-  final bool ensureVisibleOnReOpenKeyboard;
-  final bool ensureVisibleOnKeyboardType;
-  final bool ensureVisibleOnErrorAppear;
-  final bool saveAndValidateFieldOnLoseFocus;
-  final bool unFocusAllWhenTappingOutside;
-  final ReloadOn reloadOn;
-
-  FormSettings({
-    this.keyboardWait: const Duration(milliseconds: 50), //.05 seconds = 50 milliseconds
-    this.scrollDuration: const Duration(milliseconds: 100),
-    this.scrollCurve: Curves.ease,
-    this.ensureVisibleOnFieldFocus: true,
-    this.ensureVisibleOnReOpenKeyboard: true,
-    this.ensureVisibleOnKeyboardType: true,
-    this.ensureVisibleOnErrorAppear: true,
-    this.saveAndValidateFieldOnLoseFocus: true,
-    this.unFocusAllWhenTappingOutside: true,
-    this.reloadOn: ReloadOn.fieldFocusChangeOrFieldEmptinessChange,
-  });
-}
-
-enum ValidationScheme {validateAllThenRefocus, validateUntilRefocus}
-enum ValidationType {check, checkAndShow}
-enum SearchDirection {topToBottom, bottomToTop}
-
-class RefocusSettings{
-  final ValidationScheme validationScheme;
-  final ValidationType validationType;
-  final int firstTargetIndex;
-  final SearchDirection searchDirection;
-  final bool loopSearch;
-  final bool skipTargetIfValidates;
-  final FocusType focusType;
-  final bool submitFormIfAllValid;
-
-  RefocusSettings({
-    this.validationScheme: ValidationScheme.validateUntilRefocus,
-    this.validationType: ValidationType.checkAndShow,
-    this.firstTargetIndex: 0,
-    this.searchDirection: SearchDirection.topToBottom,
-    this.loopSearch: true,
-    this.skipTargetIfValidates: true,
-    this.focusType: FocusType.focusAndOpenKeyboard,
-    this.submitFormIfAllValid: true,
-  });
-}
-
-///-------------------------Extra Helper Widgets-------------------------
-
-enum ReloadOn {fieldFocusChangeOrFieldEmptinessChange, fieldFocusChange, fieldEmptinessChange, never}
-enum AppearOn {fieldFocusedAndFieldNotEmpty, fieldFocusedOrFieldNotEmpty, fieldFocused, fieldNotEmpty, always}
-
-bool doWeAppear(FormData formData, FocusNode focusNode, {AppearOn appearOn: AppearOn.fieldFocusedAndFieldNotEmpty}){
-  if(appearOn == AppearOn.always){
-    return true;
-  }
-  else{
-    bool fieldFocused = focusNode.hasFocus;
-    bool fieldNotEmpty = formData.focusNodeToTextInField[focusNode].value;
-    if(appearOn == AppearOn.fieldFocusedAndFieldNotEmpty)
-      return fieldFocused && fieldNotEmpty;
-    else if(appearOn == AppearOn.fieldFocusedOrFieldNotEmpty)
-      return fieldFocused || fieldNotEmpty;
-    else if(appearOn == AppearOn.fieldFocused)
-      return fieldFocused;
-    else
-      return fieldNotEmpty;
   }
 }

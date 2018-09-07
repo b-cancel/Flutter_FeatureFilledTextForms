@@ -16,6 +16,7 @@ class SignUpForm extends StatefulWidget {
   }
 }
 
+enum PasswordChange {show, hide, none}
 class SignUpFromState extends State<SignUpForm> {
   //-------------------------Parameters-------------------------
 
@@ -39,16 +40,28 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-----extra params
 
-  bool showPassword = false;
-  bool showConfirmPassword = false;
+  Map<FocusNode, bool> focusNodeToShowPassword;
+  Map<FocusNode, bool> focusNodeToFirstFocus;
+
   AppearOn clearButtonAppearOn = AppearOn.fieldFocusedAndFieldNotEmpty;
   AppearOn showHidePasswordButtonAppearOn = AppearOn.fieldNotEmpty;
+
+  PasswordChange whenEnterFocus = PasswordChange.show;
+  PasswordChange whenExitFocus = PasswordChange.hide;
 
   //-------------------------Overrides-------------------------
 
   @override
   void initState() {
     //-----Manual Variable Init
+
+    focusNodeToShowPassword = new Map<FocusNode, bool>();
+    focusNodeToShowPassword[passwordFocusNode] = false;
+    focusNodeToShowPassword[confirmPasswordFocusNode] = false;
+
+    focusNodeToFirstFocus = new Map<FocusNode, bool>();
+    focusNodeToFirstFocus[passwordFocusNode] = true;
+    focusNodeToFirstFocus[confirmPasswordFocusNode] = true;
 
     List<FocusNode> focusNodes = new List<FocusNode>();
     focusNodes.add(emailFocusNode);
@@ -66,8 +79,7 @@ class SignUpFromState extends State<SignUpForm> {
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
     Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField = new Map<FocusNode, ValueNotifier<bool>>();
-    Map<FocusNode, Function> focusNodeToErrorRetrievers =
-        new Map<FocusNode, Function>();
+    Map<FocusNode, Function> focusNodeToErrorRetrievers = new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
           new ValueNotifier<String>(""); //this SHOULD NOT start off as null
@@ -203,6 +215,8 @@ class SignUpFromState extends State<SignUpForm> {
             focusNode: passwordFocusNode,
             decoration: new InputDecoration(
               labelText: "Password",
+              ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the counter yourself
+              counterText: extraPasswordCounter(focusNodeToController[passwordFocusNode].text.length),
               errorText: focusNodeToError[passwordFocusNode].value,
               prefixIcon: Container(
                 padding: EdgeInsets.only(right: 16.0),
@@ -216,15 +230,15 @@ class SignUpFromState extends State<SignUpForm> {
                   GestureDetector(
                     onTap: () {
                       setState(() {
-                        showPassword = !showPassword;
+                        focusNodeToShowPassword[passwordFocusNode] = !focusNodeToShowPassword[passwordFocusNode];
                       });
                     },
-                    child: passwordShowHideButton(doWeAppear(formData, passwordFocusNode, appearOn: showHidePasswordButtonAppearOn), showPassword, Theme.of(context).hintColor),
+                    child: passwordShowHideButton(passwordFocusNode, doWeAppear(formData, passwordFocusNode, appearOn: showHidePasswordButtonAppearOn), Theme.of(context).hintColor),
                   ),
                 ],
               ),
             ),
-            obscureText: (showPassword) ? false : true,
+            obscureText: (focusNodeToShowPassword[passwordFocusNode]) ? false : true,
             onSaved: (value) =>
                 saveField(focusNodeToValue[passwordFocusNode], value),
             onFieldSubmitted: (value) =>
@@ -248,6 +262,8 @@ class SignUpFromState extends State<SignUpForm> {
             focusNode: confirmPasswordFocusNode,
             decoration: new InputDecoration(
               labelText: "Confirm Password",
+              ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the counter yourself
+              counterText: extraPasswordCounter(focusNodeToController[confirmPasswordFocusNode].text.length),
               errorText: focusNodeToError[confirmPasswordFocusNode].value,
               prefixIcon: Container(
                   padding: EdgeInsets.only(right: 16.0),
@@ -260,15 +276,15 @@ class SignUpFromState extends State<SignUpForm> {
                   GestureDetector(
                     onTap: () {
                       setState(() {
-                        showConfirmPassword = !showConfirmPassword;
+                        focusNodeToShowPassword[confirmPasswordFocusNode] = !focusNodeToShowPassword[confirmPasswordFocusNode];
                       });
                     },
-                    child: passwordShowHideButton(doWeAppear(formData, confirmPasswordFocusNode, appearOn: showHidePasswordButtonAppearOn), showConfirmPassword, Theme.of(context).hintColor),
+                    child: passwordShowHideButton(confirmPasswordFocusNode, doWeAppear(formData, confirmPasswordFocusNode, appearOn: showHidePasswordButtonAppearOn), Theme.of(context).hintColor),
                   ),
                 ],
               ),
             ),
-            obscureText: (showConfirmPassword) ? false : true,
+            obscureText: (focusNodeToShowPassword[confirmPasswordFocusNode]) ? false : true,
             onSaved: (value) =>
                 saveField(focusNodeToValue[confirmPasswordFocusNode], value),
             onFieldSubmitted: (value) => defaultSubmitField(
@@ -301,11 +317,25 @@ class SignUpFromState extends State<SignUpForm> {
     else return new Text("");
   }
 
-  Widget passwordShowHideButton(bool doWeAppear, bool showIcon, Color iconColor){
+  Widget passwordShowHideButton(FocusNode focusNode, bool doWeAppear, Color iconColor){
+
+    if(focusNode.hasFocus && focusNodeToFirstFocus[focusNode]){
+      focusNodeToFirstFocus[focusNode] = false;
+      if(whenEnterFocus != PasswordChange.none){
+        focusNodeToShowPassword[focusNode] = (whenEnterFocus == PasswordChange.show);
+      }
+    }
+    if(focusNode.hasFocus == false && focusNodeToFirstFocus[focusNode] == false){
+      focusNodeToFirstFocus[focusNode] = true;
+      if(whenExitFocus != PasswordChange.none){
+        focusNodeToShowPassword[focusNode] = (whenExitFocus == PasswordChange.show);
+      }
+    }
+
     if(doWeAppear){
       return new Padding(
         padding: const EdgeInsets.only(left: 8.0),
-        child: (showIcon)
+        child: (focusNodeToShowPassword[focusNode])
             ? new Icon(
           Icons.lock_open,
           color: iconColor,
@@ -382,5 +412,12 @@ class SignUpFromState extends State<SignUpForm> {
         ),
       );
     }
+  }
+
+  //-------------------------Extra Functions-------------------------
+
+  String extraPasswordCounter(int characterCount){
+    if(characterCount >= 6) return "";
+    else return characterCount.toString() + "/6";
   }
 }

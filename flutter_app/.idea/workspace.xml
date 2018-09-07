@@ -27,11 +27,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="signUp.dart" pinned="false" current-in-tab="true">
+      <file leaf-file-name="signUp.dart" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7140">
-              <caret line="340" column="48" lean-forward="true" selection-start-line="340" selection-start-column="48" selection-end-line="340" selection-end-column="48" />
+            <state relative-caret-position="256">
+              <caret line="143" column="30" lean-forward="false" selection-start-line="143" selection-start-column="30" selection-end-line="143" selection-end-column="30" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -39,11 +39,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="FormHelper.dart" pinned="false" current-in-tab="false">
+      <file leaf-file-name="FormHelper.dart" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-3419">
-              <caret line="351" column="36" lean-forward="false" selection-start-line="351" selection-start-column="36" selection-end-line="351" selection-end-column="36" />
+            <state relative-caret-position="256">
+              <caret line="305" column="19" lean-forward="false" selection-start-line="305" selection-start-column="14" selection-end-line="305" selection-end-column="19" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
               </folding>
@@ -62,18 +62,8 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>errorRetriever</find>
-      <find>errorRetrievers</find>
-      <find>rebu</find>
-      <find>focusNodeToValue</find>
-      <find>validateField</find>
-      <find>print</find>
-      <find>focusNodeToClearIsPossible</find>
-      <find>focusNodeToClearIsPo</find>
-      <find>clearispossible</find>
       <find>.value</find>
       <find>keyboardtype</find>
-      <find>controller</find>
       <find>generate</find>
       <find>emptyfocusnode</find>
       <find>refocussetting</find>
@@ -84,7 +74,6 @@
       <find>focusNodeToTextInField</find>
       <find>clearfield</find>
       <find>TODO</find>
-      <find>focusField</find>
       <find>async</find>
       <find>before</find>
       <find>refocusSettings</find>
@@ -92,6 +81,17 @@
       <find>settings</find>
       <find>binding</find>
       <find>clearfieldbu</find>
+      <find>text</find>
+      <find>error</find>
+      <find>focusField</find>
+      <find>ensurevisible(context</find>
+      <find>enum</find>
+      <find>focusNodeToError</find>
+      <find>validateField</find>
+      <find>clearField</find>
+      <find>controller</find>
+      <find>textinfield</find>
+      <find>print</find>
     </findStrings>
   </component>
   <component name="GradleLocalSettings">
@@ -114,8 +114,8 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="307" />
-    <option name="y" value="-23" />
+    <option name="x" value="202" />
+    <option name="y" value="-17" />
     <option name="width" value="1936" />
     <option name="height" value="1056" />
   </component>
@@ -258,7 +258,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-9" y="-9" width="1938" height="1048" extended-state="6" />
+    <frame x="-9" y="-9" width="2418" height="1318" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Android Profiler" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -270,7 +270,7 @@
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Dart Analysis" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42531356" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3523375" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26939842" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Flutter Outline" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32975295" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -331,7 +331,9 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager />
+    <breakpoint-manager>
+      <option name="time" value="1" />
+    </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
@@ -559,13 +561,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Program Files/flutter/packages/flutter/lib/src/material/input_decorator.dart">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="298">
-          <caret line="1877" column="15" lean-forward="false" selection-start-line="1877" selection-start-column="15" selection-end-line="1877" selection-end-column="15" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/lib/main.dart">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="147">
@@ -584,22 +579,30 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
+    <entry file="file://C:/Program Files/flutter/packages/flutter/lib/src/material/input_decorator.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3419">
-          <caret line="351" column="36" lean-forward="false" selection-start-line="351" selection-start-column="36" selection-end-line="351" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#20#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="-9543">
+          <caret line="1752" column="17" lean-forward="false" selection-start-line="1752" selection-start-column="13" selection-end-line="1752" selection-end-column="17" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7140">
-          <caret line="340" column="48" lean-forward="true" selection-start-line="340" selection-start-column="48" selection-end-line="340" selection-end-column="48" />
+        <state relative-caret-position="256">
+          <caret line="143" column="30" lean-forward="false" selection-start-line="143" selection-start-column="30" selection-end-line="143" selection-end-column="30" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="256">
+          <caret line="305" column="19" lean-forward="false" selection-start-line="305" selection-start-column="14" selection-end-line="305" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#20#0" expanded="true" />
           </folding>
         </state>
       </provider>
