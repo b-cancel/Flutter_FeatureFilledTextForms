@@ -17,6 +17,7 @@ class SignUpForm extends StatefulWidget {
 }
 
 enum PasswordChange {show, hide, none}
+
 class SignUpFromState extends State<SignUpForm> {
   //-------------------------Parameters-------------------------
 
@@ -41,13 +42,23 @@ class SignUpFromState extends State<SignUpForm> {
   //-----extra params
 
   Map<FocusNode, bool> focusNodeToShowPassword;
-  Map<FocusNode, bool> focusNodeToFirstFocus;
+  Map<FocusNode, bool> focusNodeToInitialFocus;
 
   AppearOn clearButtonAppearOn = AppearOn.fieldFocusedAndFieldNotEmpty;
   AppearOn showHidePasswordButtonAppearOn = AppearOn.fieldNotEmpty;
 
   PasswordChange whenEnterFocus = PasswordChange.show;
   PasswordChange whenExitFocus = PasswordChange.hide;
+
+  //TODO... on error only show most important error... on helper show all errors (for email, password, and confirm password)
+
+  //shows in red
+  TextToShow textToShowOnError = TextToShow.allErrors;
+  TextOrder textOrderOnError = TextOrder.BigToLittle;
+
+  //show in grey
+  TextToShow textToShowOnHelper = TextToShow.allErrors;
+  TextOrder textOrderOnHelper = TextOrder.BigToLittle;
 
   //-------------------------Overrides-------------------------
 
@@ -59,9 +70,9 @@ class SignUpFromState extends State<SignUpForm> {
     focusNodeToShowPassword[passwordFocusNode] = false;
     focusNodeToShowPassword[confirmPasswordFocusNode] = false;
 
-    focusNodeToFirstFocus = new Map<FocusNode, bool>();
-    focusNodeToFirstFocus[passwordFocusNode] = true;
-    focusNodeToFirstFocus[confirmPasswordFocusNode] = true;
+    focusNodeToInitialFocus = new Map<FocusNode, bool>();
+    focusNodeToInitialFocus[passwordFocusNode] = true;
+    focusNodeToInitialFocus[confirmPasswordFocusNode] = true;
 
     List<FocusNode> focusNodes = new List<FocusNode>();
     focusNodes.add(emailFocusNode);
@@ -79,6 +90,7 @@ class SignUpFromState extends State<SignUpForm> {
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
     Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField = new Map<FocusNode, ValueNotifier<bool>>();
+    ///SUPER IMPORTANT: when you generate you own error retrievers, for everything to work properly you CAN NOT edit the fields from within the function, let the FormHelper do that
     Map<FocusNode, Function> focusNodeToErrorRetrievers = new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
@@ -319,16 +331,20 @@ class SignUpFromState extends State<SignUpForm> {
 
   Widget passwordShowHideButton(FocusNode focusNode, bool doWeAppear, Color iconColor){
 
-    if(focusNode.hasFocus && focusNodeToFirstFocus[focusNode]){
-      focusNodeToFirstFocus[focusNode] = false;
-      if(whenEnterFocus != PasswordChange.none){
-        focusNodeToShowPassword[focusNode] = (whenEnterFocus == PasswordChange.show);
+    if(focusNode.hasFocus == true){
+      if(focusNodeToInitialFocus[focusNode] == true){
+        focusNodeToInitialFocus[focusNode] = false;
+        if(whenEnterFocus != PasswordChange.none){
+          focusNodeToShowPassword[focusNode] = (whenEnterFocus == PasswordChange.show);
+        }
       }
     }
-    if(focusNode.hasFocus == false && focusNodeToFirstFocus[focusNode] == false){
-      focusNodeToFirstFocus[focusNode] = true;
-      if(whenExitFocus != PasswordChange.none){
-        focusNodeToShowPassword[focusNode] = (whenExitFocus == PasswordChange.show);
+    else{
+      if(focusNodeToInitialFocus[focusNode] == false){
+        focusNodeToInitialFocus[focusNode] = true;
+        if(whenExitFocus != PasswordChange.none){
+          focusNodeToShowPassword[focusNode] = (whenExitFocus == PasswordChange.show);
+        }
       }
     }
 
@@ -351,56 +367,63 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-------------------------Per Field Functions-------------------------
 
-  String getEmailValidationError() {
-    if (focusNodeToValue[emailFocusNode].value.isNotEmpty == false)
-      return "Email Required";
-    else if (isEmail(focusNodeToValue[emailFocusNode].value) != true)
-      return "Valid Email Required";
-    else
-      return null;
-  }
+  String getEmailValidationError({TextOrder textOrder = TextOrder.BigToLittle, TextToShow textToShow = TextToShow.allErrors}) {
+    ///-----generate variables
+    String emailString = focusNodeToValue[emailFocusNode].value;
+    List<String> errors = new List();
 
-  String getPasswordValidationError(bool forPassword) {
-    String initialPasswordString = focusNodeToValue[passwordFocusNode].value;
-    String confirmPasswordString = focusNodeToValue[confirmPasswordFocusNode].value;
-
-    ///-----make sure this particular password is valid
-    if (forPassword) {
-      if (initialPasswordString.isNotEmpty == false)
-        return "Password Required";
-      else if (initialPasswordString.length < 6)
-        return "The Password Requires 6 Characters Or More";
-    } else {
-      if (confirmPasswordString.isNotEmpty == false)
-        return "Password Required";
-      else if (confirmPasswordString.length < 6)
-        return "The Password Requires 6 Characters Or More";
+    ///-----grab all the potential errors
+    if (emailString.isNotEmpty == false){
+      errors.add("Email Required");
+    }
+    if (isEmail(emailString) != true){
+      errors.add("Valid Email Required");
     }
 
+    ///-----generate the string to return
+    return generateErrorString(errors, textOrder, textToShow);
+  }
+
+  String getPasswordValidationError(bool forPassword, {TextOrder textOrder = TextOrder.BigToLittle, TextToShow textToShow = TextToShow.allErrors}) {
+    ///-----generate all the variables
+    String initialPasswordString = focusNodeToValue[passwordFocusNode].value;
+    String confirmPasswordString = focusNodeToValue[confirmPasswordFocusNode].value;
+    List<String> errors = new List();
+
+    ///-----grab all the potential errors (for the individual)
+    if ((forPassword ? initialPasswordString : confirmPasswordString).isNotEmpty == false){
+      errors.add("Password Required");
+    }
+    if ((forPassword ? initialPasswordString : confirmPasswordString).length < 6){
+      errors.add("The Password Requires 6 Characters Or More");
+    }
+
+    //TODO... do we care about matching passwords before the individual password validates?
     ///-----make sure both passwords are valid together
+    /*
     if (initialPasswordString.isNotEmpty && confirmPasswordString.isNotEmpty) {
       if (initialPasswordString != confirmPasswordString){
-        if(forPassword && focusNodeToError[confirmPasswordFocusNode].value == null){
+        if(forPassword == true && focusNodeToError[confirmPasswordFocusNode].value == null){
           focusNodeToError[confirmPasswordFocusNode].value = "The Passwords Don't Match";
         }
-        else if(focusNodeToError[passwordFocusNode].value == null){
+        else if(forPassword == false && focusNodeToError[passwordFocusNode].value == null){
           focusNodeToError[passwordFocusNode].value = "The Passwords Don't Match";
         }
-        return "The Passwords Don't Match";
+        errors.add("The Passwords Don't Match");
       }
       else {
         if(forPassword) focusNodeToError[confirmPasswordFocusNode].value = null;
         else focusNodeToError[passwordFocusNode].value = null;
-
-        return null;
       }
-    } else {
-      return null;
     }
+    */
+
+    ///-----process all compiled errors
+    return generateErrorString(errors, textOrder, textToShow);
   }
 
-  String getInitialPasswordValidationError() => getPasswordValidationError(true);
-  String getConfirmPasswordValidationError() => getPasswordValidationError(false);
+  String getInitialPasswordValidationError() => getPasswordValidationError(true, textOrder: textOrderOnError, textToShow: textToShowOnError);
+  String getConfirmPasswordValidationError() => getPasswordValidationError(false, textOrder: textOrderOnError, textToShow: textToShowOnError);
 
   //-------------------------Form Functions-------------------------
 

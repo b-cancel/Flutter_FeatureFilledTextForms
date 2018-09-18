@@ -28,6 +28,8 @@ enum ValidationType {check, checkAndShow}
 enum SearchDirection {topToBottom, bottomToTop}
 enum ReloadOn {fieldFocusChangeOrFieldEmptinessChange, fieldFocusChange, fieldEmptinessChange, never}
 enum AppearOn {fieldFocusedAndFieldNotEmpty, fieldFocusedOrFieldNotEmpty, fieldFocused, fieldNotEmpty, always}
+enum TextToShow {firstError, allErrors}
+enum TextOrder {littleToBig, BigToLittle}
 
 ///-------------------------Functions-------------------------
 
@@ -159,6 +161,29 @@ int _getIndexAfter(int currIndex, int maxIndex){
 int _getIndexBefore(int currIndex, int maxIndex){
   currIndex--;
   return (currIndex < 0) ? maxIndex : currIndex;
+}
+
+String generateErrorString(List<String> errors, TextOrder textOrder, TextToShow textToShow){
+  if(errors.length == 0){
+    return null;
+  }
+  else{
+    //reverse the order of the errors if desired
+    if(textOrder == TextOrder.littleToBig){
+      errors = errors.reversed.toList();
+    }
+    //return the desired data
+    if(textToShow == TextToShow.firstError){
+      return errors[0];
+    }
+    else{
+      String compiledResult;
+      for(String str in errors){
+        compiledResult = (compiledResult ?? "") + str + "\n";
+      }
+      return compiledResult;
+    }
+  }
 }
 
 ///-------------------------Structure Classes-------------------------
@@ -300,12 +325,15 @@ class _FormHelperState extends State<FormHelper> {
           if(widget.formSettings.autoSaveFieldValue){
             String prevValue = widget.formData.focusNodeToValue[focusNode].value;
             String currValue = widget.formData.focusNodeToController[focusNode].text;
-            if(prevValue != currValue){
-              ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the helper yourself
-              //Note: Requires that "widget.formSettings.reloadOnFieldContentChange == true" to update whatever is being changed here
-              print("---wipe the error");
-              print("---Set our helper or counter text");
+            print(prevValue + " vs " + currValue);
+            if(prevValue != currValue&& widget.formData.focusNodeToError[focusNode].value != null){
+              print("---wipe error");
+              widget.formData.focusNodeToError[focusNode].value = null;
             }
+            else{
+              print("---no need to wipe the error");
+            }
+            print("---Set our helper or counter text");
             widget.formData.focusNodeToValue[focusNode].value = widget.formData.focusNodeToController[focusNode].text;
           }
           if(widget.formSettings.keepTrackOfWhenFieldsBecomeEmpty && widget.formData.focusNodeToTextInField != null){
