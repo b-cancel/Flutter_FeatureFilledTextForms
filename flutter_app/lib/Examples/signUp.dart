@@ -30,6 +30,7 @@ class SignUpFromState extends State<SignUpForm> {
   //-----form field params
 
   Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
+  Map<FocusNode, ValueNotifier<String>> focusNodeToHelper;
   Map<FocusNode, ValueNotifier<String>> focusNodeToError;
   Map<FocusNode, TextEditingController> focusNodeToController;
 
@@ -50,15 +51,13 @@ class SignUpFromState extends State<SignUpForm> {
   PasswordChange whenEnterFocus = PasswordChange.show;
   PasswordChange whenExitFocus = PasswordChange.hide;
 
-  //TODO... on error only show most important error... on helper show all errors (for email, password, and confirm password)
-
   //shows in red
-  TextToShow textToShowOnError = TextToShow.allErrors;
+  TextToShow textToShowOnError = TextToShow.firstError;
   TextOrder textOrderOnError = TextOrder.BigToLittle;
 
   //show in grey
   TextToShow textToShowOnHelper = TextToShow.allErrors;
-  TextOrder textOrderOnHelper = TextOrder.BigToLittle;
+  TextOrder textOrderOnHelper = TextOrder.littleToBig;
 
   //-------------------------Overrides-------------------------
 
@@ -80,27 +79,37 @@ class SignUpFromState extends State<SignUpForm> {
     focusNodes.add(confirmPasswordFocusNode);
 
     List<Function> errorRetrievers = new List<Function>();
-    errorRetrievers.add(getEmailValidationError);
-    errorRetrievers.add(getInitialPasswordValidationError);
-    errorRetrievers.add(getConfirmPasswordValidationError);
+    errorRetrievers.add((){return getEmailValidationError(textOrderOnError, textToShowOnError);});
+    errorRetrievers.add((){return getPasswordValidationError(true, textOrderOnError, textToShowOnError);});
+    errorRetrievers.add((){return getPasswordValidationError(false, textOrderOnError, textToShowOnError);});
+
+    List<Function> helperRetrievers = new List<Function>();
+    helperRetrievers.add((){return getEmailValidationError(textOrderOnHelper, textToShowOnHelper);});
+    helperRetrievers.add((){return getPasswordValidationError(true, textOrderOnHelper, textToShowOnHelper);});
+    helperRetrievers.add((){return getPasswordValidationError(false, textOrderOnHelper, textToShowOnHelper);});
 
     //-----Automatic Variable Init
 
     focusNodeToValue = new Map<FocusNode, ValueNotifier<String>>();
+    focusNodeToHelper = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToError = new Map<FocusNode, ValueNotifier<String>>();
     focusNodeToController = new Map<FocusNode, TextEditingController>();
     Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField = new Map<FocusNode, ValueNotifier<bool>>();
     ///SUPER IMPORTANT: when you generate you own error retrievers, for everything to work properly you CAN NOT edit the fields from within the function, let the FormHelper do that
     Map<FocusNode, Function> focusNodeToErrorRetrievers = new Map<FocusNode, Function>();
+    Map<FocusNode, Function> focusNodeToHelperRetrievers = new Map<FocusNode, Function>();
     for (int nodeID = 0; nodeID < focusNodes.length; nodeID++) {
       focusNodeToValue[focusNodes[nodeID]] =
           new ValueNotifier<String>(""); //this SHOULD NOT start off as null
-      focusNodeToError[focusNodes[nodeID]] =
+      focusNodeToHelper[focusNodes[nodeID]] =
           new ValueNotifier<String>(null); //this SHOULD start off as null
+      focusNodeToError[focusNodes[nodeID]] =
+      new ValueNotifier<String>(null); //this SHOULD start off as null
       focusNodeToController[focusNodes[nodeID]] = new TextEditingController();
       focusNodeToTextInField[focusNodes[nodeID]] =
           new ValueNotifier<bool>(false);
       focusNodeToErrorRetrievers[focusNodes[nodeID]] = errorRetrievers[nodeID];
+      focusNodeToHelperRetrievers[focusNodes[nodeID]] = helperRetrievers[nodeID];
     }
 
     //-----Form Data and Form Settings => to Make Using The Form Helper Easier
@@ -110,7 +119,9 @@ class SignUpFromState extends State<SignUpForm> {
       context: context,
       submitForm: submitForm,
       focusNodes: focusNodes,
+      focusNodeToHelper: focusNodeToHelper,
       focusNodeToError: focusNodeToError,
+      focusNodeToHelperRetrievers: focusNodeToHelperRetrievers,
       focusNodeToErrorRetrievers: focusNodeToErrorRetrievers,
       focusNodeToController: focusNodeToController,
       focusNodeToValue: focusNodeToValue,
@@ -196,6 +207,7 @@ class SignUpFromState extends State<SignUpForm> {
             decoration: new InputDecoration(
               labelText: "Email",
               hintText: 'you@swol.com',
+              helperText: focusNodeToHelper[emailFocusNode].value,
               errorText: focusNodeToError[emailFocusNode].value,
               prefixIcon: Container(
                 padding: EdgeInsets.only(right: 16.0),
@@ -229,6 +241,7 @@ class SignUpFromState extends State<SignUpForm> {
               labelText: "Password",
               ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the counter yourself
               counterText: extraPasswordCounter(focusNodeToController[passwordFocusNode].text.length),
+              helperText: focusNodeToHelper[passwordFocusNode].value,
               errorText: focusNodeToError[passwordFocusNode].value,
               prefixIcon: Container(
                 padding: EdgeInsets.only(right: 16.0),
@@ -276,6 +289,7 @@ class SignUpFromState extends State<SignUpForm> {
               labelText: "Confirm Password",
               ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the counter yourself
               counterText: extraPasswordCounter(focusNodeToController[confirmPasswordFocusNode].text.length),
+              helperText: focusNodeToHelper[confirmPasswordFocusNode].value,
               errorText: focusNodeToError[confirmPasswordFocusNode].value,
               prefixIcon: Container(
                   padding: EdgeInsets.only(right: 16.0),
@@ -367,7 +381,7 @@ class SignUpFromState extends State<SignUpForm> {
 
   //-------------------------Per Field Functions-------------------------
 
-  String getEmailValidationError({TextOrder textOrder = TextOrder.BigToLittle, TextToShow textToShow = TextToShow.allErrors}) {
+  String getEmailValidationError(TextOrder textOrder, TextToShow textToShow) {
     ///-----generate variables
     String emailString = focusNodeToValue[emailFocusNode].value;
     List<String> errors = new List();
@@ -384,7 +398,7 @@ class SignUpFromState extends State<SignUpForm> {
     return generateErrorString(errors, textOrder, textToShow);
   }
 
-  String getPasswordValidationError(bool forPassword, {TextOrder textOrder = TextOrder.BigToLittle, TextToShow textToShow = TextToShow.allErrors}) {
+  String getPasswordValidationError(bool forPassword, TextOrder textOrder, TextToShow textToShow) {
     ///-----generate all the variables
     String initialPasswordString = focusNodeToValue[passwordFocusNode].value;
     String confirmPasswordString = focusNodeToValue[confirmPasswordFocusNode].value;
@@ -421,9 +435,6 @@ class SignUpFromState extends State<SignUpForm> {
     ///-----process all compiled errors
     return generateErrorString(errors, textOrder, textToShow);
   }
-
-  String getInitialPasswordValidationError() => getPasswordValidationError(true, textOrder: textOrderOnError, textToShow: textToShowOnError);
-  String getConfirmPasswordValidationError() => getPasswordValidationError(false, textOrder: textOrderOnError, textToShow: textToShowOnError);
 
   //-------------------------Form Functions-------------------------
 

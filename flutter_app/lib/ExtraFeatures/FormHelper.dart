@@ -60,7 +60,7 @@ focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: Focu
   }
 }
 
-String validateField(FormData formData, FocusNode focusNode){
+String validateField(FormData formData, FocusNode focusNode){ //TODO... modify this to also work for helper text
   //null error is no error (but still must be displayed to make error go away)
   String errorRetrieved = formData.focusNodeToErrorRetrievers[focusNode]();
   formData.focusNodeToError[focusNode].value = errorRetrieved;
@@ -193,7 +193,9 @@ class FormData{
   final BuildContext context;
   final Function submitForm;
   final List<FocusNode> focusNodes;
+  final Map<FocusNode, ValueNotifier<String>> focusNodeToHelper;
   final Map<FocusNode, ValueNotifier<String>> focusNodeToError;
+  final Map<FocusNode, Function> focusNodeToHelperRetrievers;
   final Map<FocusNode, Function> focusNodeToErrorRetrievers;
   final Map<FocusNode, TextEditingController> focusNodeToController;
   final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
@@ -204,7 +206,9 @@ class FormData{
     this.context,
     this.submitForm,
     this.focusNodes,
+    this.focusNodeToHelper,
     this.focusNodeToError,
+    this.focusNodeToHelperRetrievers,
     this.focusNodeToErrorRetrievers,
     this.focusNodeToController,
     this.focusNodeToValue,
@@ -325,16 +329,11 @@ class _FormHelperState extends State<FormHelper> {
           if(widget.formSettings.autoSaveFieldValue){
             String prevValue = widget.formData.focusNodeToValue[focusNode].value;
             String currValue = widget.formData.focusNodeToController[focusNode].text;
-            print(prevValue + " vs " + currValue);
             if(prevValue != currValue&& widget.formData.focusNodeToError[focusNode].value != null){
-              print("---wipe error");
-              widget.formData.focusNodeToError[focusNode].value = null;
+              widget.formData.focusNodeToError[focusNode].value = null; //this is done so that our helper text can become visible
             }
-            else{
-              print("---no need to wipe the error");
-            }
-            print("---Set our helper or counter text");
             widget.formData.focusNodeToValue[focusNode].value = widget.formData.focusNodeToController[focusNode].text;
+            widget.formData.focusNodeToHelper[focusNode].value = widget.formData.focusNodeToHelperRetrievers[focusNode]();
           }
           if(widget.formSettings.keepTrackOfWhenFieldsBecomeEmpty && widget.formData.focusNodeToTextInField != null){
             if((widget.formData.focusNodeToController[focusNode].text.length ?? 0) > 0) widget.formData.focusNodeToTextInField[focusNode].value = true;
@@ -456,7 +455,9 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     //For Optimal Performance we want to the animated builders that update the least amount of times closer to the outside,
     // and those that update the most closer to the inside
     //LEAST TO MOST UPDATES
-    //focusNode, (focusNodeToTextInField[widget.focusNode] OR focusNodeToError[widget.focusNode]), focusNodeToController[widget.focusNode]
+    //  1. focusNode,
+    //  2. (focusNodeToTextInField[widget.focusNode] OR focusNodeToError[widget.focusNode]),
+    //  3. focusNodeToController[widget.focusNode]
 
     //Developer Note: We could construct the widget and save ourselves some lines of code but it makes everything harder to understand
 
@@ -550,13 +551,13 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
         animation: widget.focusNode,
         builder: (context, child) {
           return new AnimatedBuilder(
-            animation: widget.formData.focusNodeToError[widget.focusNode],
+            animation: widget.formData.focusNodeToError[widget.focusNode], //INCORRECT order so that we can call ensure visible
             builder: (context, child){
               if(widget.formSettings.ensureVisibleOnErrorAppear){
                 ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
               }
               return new AnimatedBuilder(
-                animation: widget.formData.focusNodeToTextInField[widget.focusNode], //out of order so we can call ensure visible
+                animation: widget.formData.focusNodeToTextInField[widget.focusNode], //INCORRECT order so that we can call ensure visible
                 builder: widget.builder,
               );
             },
@@ -566,13 +567,13 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     }
     else if(onFocusChange == false && onEmptinessChange == true && onContentChange == false ){ //---2 Animated Builders
       return new AnimatedBuilder(
-        animation: widget.formData.focusNodeToError[widget.focusNode],
+        animation: widget.formData.focusNodeToError[widget.focusNode], //INCORRECT order so that we can call ensure visible
         builder: (context, child){
           if(widget.formSettings.ensureVisibleOnErrorAppear){
             ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
           }
           return new AnimatedBuilder(
-            animation: widget.formData.focusNodeToTextInField[widget.focusNode], //out of order so we can call ensure visible
+            animation: widget.formData.focusNodeToTextInField[widget.focusNode], //INCORRECT order so that we can call ensure visible
             builder: widget.builder,
           );
         },
@@ -580,13 +581,13 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
     }
     else if(onFocusChange == true && onEmptinessChange == false && onContentChange == false ){ //---2 Animated Builders
       return new AnimatedBuilder(
-        animation: widget.formData.focusNodeToError[widget.focusNode],
+        animation: widget.formData.focusNodeToError[widget.focusNode], //INCORRECT order so that we can call ensure visible
         builder: (context, child){
           if(widget.formSettings.ensureVisibleOnErrorAppear){
             ensureVisible(context, widget.focusNode, duration: widget.formSettings.scrollDuration, curve: widget.formSettings.scrollCurve);
           }
           return new AnimatedBuilder(
-            animation: widget.focusNode,
+            animation: widget.focusNode, //INCORRECT order so that we can call ensure visible
             builder: widget.builder,
           );
         },
@@ -613,7 +614,7 @@ class _TextFormFieldHelperState extends State<TextFormFieldHelper> with WidgetsB
                   animation: widget.formData.focusNodeToError[widget.focusNode],
                   builder: widget.builder,
                 );
-              }
+              },
           );
         }
       }

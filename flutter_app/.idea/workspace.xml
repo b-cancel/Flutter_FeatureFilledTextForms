@@ -30,8 +30,8 @@
       <file leaf-file-name="signUp.dart" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2436">
-              <caret line="73" column="44" lean-forward="true" selection-start-line="73" selection-start-column="44" selection-end-line="73" selection-end-column="44" />
+            <state relative-caret-position="78">
+              <caret line="67" column="57" lean-forward="true" selection-start-line="67" selection-start-column="57" selection-end-line="67" selection-end-column="57" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -42,8 +42,8 @@
       <file leaf-file-name="FormHelper.dart" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="84">
-              <caret line="322" column="60" lean-forward="true" selection-start-line="322" selection-start-column="60" selection-end-line="322" selection-end-column="60" />
+            <state relative-caret-position="145">
+              <caret line="329" column="81" lean-forward="true" selection-start-line="329" selection-start-column="81" selection-end-line="329" selection-end-column="81" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
               </folding>
@@ -62,11 +62,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>focusNodeToTextIn</find>
-      <find>focusNode</find>
-      <find>ensureVisible</find>
-      <find>defaultsu</find>
-      <find>focusNodeToTextInField</find>
       <find>clearfield</find>
       <find>TODO</find>
       <find>async</find>
@@ -91,6 +86,11 @@
       <find>errorRetrievers</find>
       <find>print</find>
       <find>formdata</find>
+      <find>focusNodetoError</find>
+      <find>focusNodeToErr</find>
+      <find>validatefield</find>
+      <find>focusNodeToErrorRetrie</find>
+      <find>focusNodeToHelper</find>
       <find>focusNodeToInitial</find>
     </findStrings>
   </component>
@@ -108,8 +108,8 @@
         <option value="$PROJECT_DIR$/lib/Examples/signIn.dart" />
         <option value="$PROJECT_DIR$/lib/ExtraFeatures/EnsureVisible.dart" />
         <option value="$PROJECT_DIR$/lib/main.dart" />
-        <option value="$PROJECT_DIR$/lib/Examples/signUp.dart" />
         <option value="$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart" />
+        <option value="$PROJECT_DIR$/lib/Examples/signUp.dart" />
       </list>
     </option>
   </component>
@@ -617,8 +617,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/ExtraFeatures/FormHelper.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="84">
-          <caret line="322" column="60" lean-forward="true" selection-start-line="322" selection-start-column="60" selection-end-line="322" selection-end-column="60" />
+        <state relative-caret-position="145">
+          <caret line="329" column="81" lean-forward="true" selection-start-line="329" selection-start-column="81" selection-end-line="329" selection-end-column="81" />
           <folding>
             <element signature="e#0#20#0" expanded="true" />
           </folding>
@@ -627,8 +627,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/Examples/signUp.dart">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2436">
-          <caret line="73" column="44" lean-forward="true" selection-start-line="73" selection-start-column="44" selection-end-line="73" selection-end-column="44" />
+        <state relative-caret-position="78">
+          <caret line="67" column="57" lean-forward="true" selection-start-line="67" selection-start-column="57" selection-end-line="67" selection-end-column="57" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>
