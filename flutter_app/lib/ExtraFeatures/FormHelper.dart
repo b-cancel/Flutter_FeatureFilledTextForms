@@ -60,7 +60,7 @@ focusField(BuildContext context, FocusNode focusNode, {FocusType focusType: Focu
   }
 }
 
-String validateField(FormData formData, FocusNode focusNode){ //TODO... modify this to also work for helper text
+String validateField(FormData formData, FocusNode focusNode){
   //null error is no error (but still must be displayed to make error go away)
   String errorRetrieved = formData.focusNodeToErrorRetrievers[focusNode]();
   formData.focusNodeToError[focusNode].value = errorRetrieved;
@@ -178,8 +178,13 @@ String generateErrorString(List<String> errors, TextOrder textOrder, TextToShow 
     }
     else{
       String compiledResult;
-      for(String str in errors){
-        compiledResult = (compiledResult ?? "") + str + "\n";
+      for(int i=0; i<errors.length; i++){
+        if(i==0){
+          compiledResult = errors[i];
+        }
+        else{
+          compiledResult += "\n" + errors[i];
+        }
       }
       return compiledResult;
     }
@@ -200,6 +205,7 @@ class FormData{
   final Map<FocusNode, TextEditingController> focusNodeToController;
   final Map<FocusNode, ValueNotifier<String>> focusNodeToValue;
   final Map<FocusNode, ValueNotifier<bool>> focusNodeToTextInField;
+  final Map<FocusNode, Function> focusNodeToErrorDisplayers;
 
   FormData({
     this.formKey,
@@ -213,6 +219,7 @@ class FormData{
     this.focusNodeToController,
     this.focusNodeToValue,
     this.focusNodeToTextInField,
+    this.focusNodeToErrorDisplayers,
   });
 }
 

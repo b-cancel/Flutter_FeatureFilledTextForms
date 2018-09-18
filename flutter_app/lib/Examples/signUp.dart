@@ -38,7 +38,6 @@ class SignUpFromState extends State<SignUpForm> {
 
   final FocusNode emailFocusNode = new FocusNode();
   final FocusNode passwordFocusNode = new FocusNode();
-  final FocusNode confirmPasswordFocusNode = new FocusNode();
 
   //-----extra params
 
@@ -67,26 +66,21 @@ class SignUpFromState extends State<SignUpForm> {
 
     focusNodeToShowPassword = new Map<FocusNode, bool>();
     focusNodeToShowPassword[passwordFocusNode] = false;
-    focusNodeToShowPassword[confirmPasswordFocusNode] = false;
 
     focusNodeToInitialFocus = new Map<FocusNode, bool>();
     focusNodeToInitialFocus[passwordFocusNode] = true;
-    focusNodeToInitialFocus[confirmPasswordFocusNode] = true;
 
     List<FocusNode> focusNodes = new List<FocusNode>();
     focusNodes.add(emailFocusNode);
     focusNodes.add(passwordFocusNode);
-    focusNodes.add(confirmPasswordFocusNode);
-
-    List<Function> errorRetrievers = new List<Function>();
-    errorRetrievers.add((){return getEmailValidationError(textOrderOnError, textToShowOnError);});
-    errorRetrievers.add((){return getPasswordValidationError(true, textOrderOnError, textToShowOnError);});
-    errorRetrievers.add((){return getPasswordValidationError(false, textOrderOnError, textToShowOnError);});
 
     List<Function> helperRetrievers = new List<Function>();
     helperRetrievers.add((){return getEmailValidationError(textOrderOnHelper, textToShowOnHelper);});
-    helperRetrievers.add((){return getPasswordValidationError(true, textOrderOnHelper, textToShowOnHelper);});
-    helperRetrievers.add((){return getPasswordValidationError(false, textOrderOnHelper, textToShowOnHelper);});
+    helperRetrievers.add((){return getPasswordValidationError(textOrderOnHelper, textToShowOnHelper);});
+
+    List<Function> errorRetrievers = new List<Function>();
+    errorRetrievers.add((){return getEmailValidationError(textOrderOnError, textToShowOnError);});
+    errorRetrievers.add((){return getPasswordValidationError(textOrderOnError, textToShowOnError);});
 
     //-----Automatic Variable Init
 
@@ -138,7 +132,7 @@ class SignUpFromState extends State<SignUpForm> {
     return FormHelper(
       formData: formData,
       formSettings: formSettings,
-      focusNodeForInitialFocus: confirmPasswordFocusNode,
+      focusNodeForInitialFocus: emailFocusNode,
       child: new Container(
         padding: EdgeInsets.all(16.0),
         child: new Column(
@@ -148,6 +142,13 @@ class SignUpFromState extends State<SignUpForm> {
             new FlutterLogo(
               size: 250.0,
             ),
+            new Container(
+              width: 200.0,
+              child: new FittedBox(
+                fit: BoxFit.fitWidth,
+                child: new Text("Sign Up"),
+              ),
+            ),
             new Form(
               key: formKey,
               child: new Column(
@@ -156,7 +157,6 @@ class SignUpFromState extends State<SignUpForm> {
                 children: <Widget>[
                   emailField(context),
                   passwordField(context),
-                  confirmPasswordField(context),
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: new Row(
@@ -274,53 +274,6 @@ class SignUpFromState extends State<SignUpForm> {
     );
   }
 
-  Widget confirmPasswordField(BuildContext context) {
-    return TextFormFieldHelper(
-      formData: formData,
-      formSettings: formSettings,
-      focusNode: confirmPasswordFocusNode,
-      builder: (context, child) {
-        return new Padding(
-          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-          child: new TextFormField(
-            controller: focusNodeToController[confirmPasswordFocusNode],
-            focusNode: confirmPasswordFocusNode,
-            decoration: new InputDecoration(
-              labelText: "Confirm Password",
-              ///NOTE: If "widget.formSettings.reloadOnFieldContentChange == false" then you will have to find a way to update the counter yourself
-              counterText: extraPasswordCounter(focusNodeToController[confirmPasswordFocusNode].text.length),
-              helperText: focusNodeToHelper[confirmPasswordFocusNode].value,
-              errorText: focusNodeToError[confirmPasswordFocusNode].value,
-              prefixIcon: Container(
-                  padding: EdgeInsets.only(right: 16.0),
-                  child: new Icon(Icons.security)),
-              suffixIcon: new Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  clearFieldButton(doWeAppear(formData, confirmPasswordFocusNode, appearOn: clearButtonAppearOn), confirmPasswordFocusNode),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        focusNodeToShowPassword[confirmPasswordFocusNode] = !focusNodeToShowPassword[confirmPasswordFocusNode];
-                      });
-                    },
-                    child: passwordShowHideButton(confirmPasswordFocusNode, doWeAppear(formData, confirmPasswordFocusNode, appearOn: showHidePasswordButtonAppearOn), Theme.of(context).hintColor),
-                  ),
-                ],
-              ),
-            ),
-            obscureText: (focusNodeToShowPassword[confirmPasswordFocusNode]) ? false : true,
-            onSaved: (value) =>
-                saveField(focusNodeToValue[confirmPasswordFocusNode], value),
-            onFieldSubmitted: (value) => defaultSubmitField(
-                formData, confirmPasswordFocusNode, value, true),
-          ),
-        );
-      },
-    );
-  }
-
   Widget signUpButton(BuildContext context) {
     return new RaisedButton(
       onPressed: () => refocus(
@@ -398,39 +351,18 @@ class SignUpFromState extends State<SignUpForm> {
     return generateErrorString(errors, textOrder, textToShow);
   }
 
-  String getPasswordValidationError(bool forPassword, TextOrder textOrder, TextToShow textToShow) {
+  String getPasswordValidationError(TextOrder textOrder, TextToShow textToShow) {
     ///-----generate all the variables
-    String initialPasswordString = focusNodeToValue[passwordFocusNode].value;
-    String confirmPasswordString = focusNodeToValue[confirmPasswordFocusNode].value;
+    String passwordString = focusNodeToValue[passwordFocusNode].value;
     List<String> errors = new List();
 
     ///-----grab all the potential errors (for the individual)
-    if ((forPassword ? initialPasswordString : confirmPasswordString).isNotEmpty == false){
+    if (passwordString.isNotEmpty == false){
       errors.add("Password Required");
     }
-    if ((forPassword ? initialPasswordString : confirmPasswordString).length < 6){
+    if (passwordString.length < 6){
       errors.add("The Password Requires 6 Characters Or More");
     }
-
-    //TODO... do we care about matching passwords before the individual password validates?
-    ///-----make sure both passwords are valid together
-    /*
-    if (initialPasswordString.isNotEmpty && confirmPasswordString.isNotEmpty) {
-      if (initialPasswordString != confirmPasswordString){
-        if(forPassword == true && focusNodeToError[confirmPasswordFocusNode].value == null){
-          focusNodeToError[confirmPasswordFocusNode].value = "The Passwords Don't Match";
-        }
-        else if(forPassword == false && focusNodeToError[passwordFocusNode].value == null){
-          focusNodeToError[passwordFocusNode].value = "The Passwords Don't Match";
-        }
-        errors.add("The Passwords Don't Match");
-      }
-      else {
-        if(forPassword) focusNodeToError[confirmPasswordFocusNode].value = null;
-        else focusNodeToError[passwordFocusNode].value = null;
-      }
-    }
-    */
 
     ///-----process all compiled errors
     return generateErrorString(errors, textOrder, textToShow);
