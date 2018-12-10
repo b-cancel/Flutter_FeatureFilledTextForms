@@ -6,9 +6,11 @@ Form Features that improve your apps UX!
 - and more! 
 
 Documentation: IN PROGRESS
+
 Features Being Added: 
 - pressing backspace or clear on an empty field refocuses to the previous field
 - switching between log in and sign up should be a simple showing and hiding of fields
+
 Note: 
 - Refocus Function does not cover all cases but it does cover most cases. 
 - Additional refocusing features could be added by marking fields as required or not and separating this from the validation process. 
